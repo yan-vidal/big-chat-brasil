@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ESTIMATED_DELIVERY_SECONDS, MESSAGE_COST_CENTS, getMessageCostCents } from './money';
+import { ESTIMATED_DELIVERY_SECONDS, MESSAGE_COST_CENTS, getMessageCostCents } from './money.js';
 
 describe('message pricing', () => {
   it('prices normal messages at 25 cents', () => {

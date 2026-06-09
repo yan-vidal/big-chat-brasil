@@ -7,7 +7,7 @@ import {
   RoleSchema,
   type MessageStatus,
   type Role,
-} from './enums';
+} from './enums.js';
 
 describe('shared enums', () => {
   it('accepts stable contract values', () => {

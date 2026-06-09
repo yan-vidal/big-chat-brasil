@@ -49,6 +49,18 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - Captura visual pós-correção validada: fundo slate, conteúdo centralizado, título à esquerda, `Sprint 0` à direita e separador do header.
   - Gates finais deste bloco passaram: `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` e `pnpm exec prettier --check ...` nos arquivos tocados.
   - Tudo deste bloco deve permanecer em um único commit coeso: Playwright, servidor estático, PostCSS/Tailwind, ESLint `.mjs`, lockfile, `.gitignore` e este handoff.
+- **Sprint 2 - Banco, Kysely e seed implementada, verificada e commitada** (`feat(api): add kysely migrations and seed data`):
+  - Plano detalhado: `docs/superpowers/plans/2026-06-09-sprint-2-database-kysely-seed.md`.
+  - `@bcb/api` recebeu `kysely`, `pg`, `bcryptjs`, `@types/pg`, dependência workspace de `@bcb/shared`, scripts `db:migrate`, `db:rollback`, `db:seed` e `test:db`.
+  - API convertida para ESM/NodeNext para consumir Kysely 0.29 e `@bcb/shared` corretamente; `start` agora aponta para `dist/src/main.js`.
+  - `@bcb/shared` também foi ajustado para NodeNext com imports/exports relativos `.js`, mantendo build consumível pelo Node e pelo API.
+  - Helpers `generateCpf()`/`generateCnpj()` adicionados em `@bcb/shared/testing`, com testes Vitest.
+  - Migration explícita `apps/api/migrations/001_initial_schema.ts` cria `accounts`, `client_profiles`, `recipients`, `conversations`, `messages`, `payment_intents` e `billing_transactions` com constraints, FKs e índices.
+  - `apps/api/src/database/` agora contém client Kysely, config, service/module Nest, tipos manuais, provider de migrations, CLI, seed, fixtures e helper de reset para testes.
+  - Seed idempotente recria as tabelas da aplicação e insere as cinco contas demo, quatro recipients e duas conversas da Empresa ABC, incluindo histórico.
+  - TDD observado: helpers de documento falharam por módulo ausente; `database.config` falhou por módulo ausente; seed-data falhou por módulo ausente; integração DB falhou por módulos ausentes e depois passou com Postgres real.
+  - Gates executados e verdes: `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm --filter @bcb/api test:db`, `pnpm --filter @bcb/api db:migrate`, `pnpm --filter @bcb/api db:seed`, Prettier nos arquivos tocados.
+  - Observação operacional: `test:db`, `db:migrate` e `db:seed` precisam de conexão TCP com PostgreSQL local; no Codex sandbox, rodar fora do sandbox/escalado. O container `big-chat-brasil-irrah-db-1` está `healthy` e o banco local foi migrado/seedado nesta sessão.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -63,8 +75,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Iniciar a **Sprint 2 - Banco, Kysely e seed**.
-3. Antes de codar Sprint 2, gerar plano detalhado em `docs/superpowers/plans/`; incluir PostgreSQL real, migrations, tipos Kysely, helpers de documento para testes e seed com as fixtures cravadas.
+2. Iniciar a **Sprint 3 - Autenticação e sessão**.
+3. Antes de codar Sprint 3, gerar plano detalhado em `docs/superpowers/plans/`; incluir login/criação por CPF/CNPJ, hash bcrypt, JWT, guards, headers de cliente e testes HTTP.
 
 ## Skills sugeridas para o próximo agente
 
@@ -91,6 +103,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - O docker compose final (Sprint 10) precisa rodar `db:migrate` + `db:seed` sozinho: o avaliador não executa passos manuais.
 - Angular 22 neste repo não lê `postcss.config.mjs`; manter `postcss.config.json` para o Tailwind 4 realmente gerar utilities.
 - E2E local depende do Chrome do sistema em `/usr/bin/google-chrome-stable` via `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`; sem isso o Playwright pode tentar usar browser baixado.
+- `@bcb/api` e `@bcb/shared` estão em ESM/NodeNext. Imports relativos em TypeScript devem usar sufixo `.js`; não voltar para imports extensionless.
+- `pnpm test` pula a integração DB por padrão; usar `pnpm --filter @bcb/api test:db` com o Postgres do Compose healthy para validar migrations/seed.
 
 ## Pendências que dependem do Yan
 

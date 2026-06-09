@@ -2,23 +2,33 @@
   "name": "@bcb/api",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint .",
-    "start": "node dist/main.js",
+    "start": "node dist/src/main.js",
     "start:dev": "tsx watch src/main.ts",
-    "test": "jest --config jest.config.cjs"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.cjs",
+    "test:db": "BCB_RUN_DB_TESTS=true NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.cjs --runInBand database.integration.spec.ts",
+    "db:migrate": "tsx src/database/migrate.ts up",
+    "db:rollback": "tsx src/database/migrate.ts down",
+    "db:seed": "tsx src/database/seed.ts"
   },
   "dependencies": {
+    "@bcb/shared": "workspace:*",
     "@nestjs/common": "11.1.26",
     "@nestjs/core": "11.1.26",
     "@nestjs/platform-express": "11.1.26",
+    "bcryptjs": "3.0.3",
+    "kysely": "0.29.2",
+    "pg": "8.21.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
   },
   "devDependencies": {
     "@nestjs/testing": "11.1.26",
     "@types/jest": "30.0.0",
+    "@types/pg": "8.20.0",
     "jest": "30.4.2",
     "ts-jest": "29.4.11",
     "tsx": "4.22.4"

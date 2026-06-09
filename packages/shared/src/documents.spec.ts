@@ -7,7 +7,7 @@ import {
   isValidCnpj,
   isValidCpf,
   normalizeDocument,
-} from './documents';
+} from './documents.js';
 
 describe('document normalization and validation', () => {
   it('normalizes formatted CPF and CNPJ values', () => {

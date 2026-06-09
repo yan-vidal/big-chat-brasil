@@ -1,4 +1,4 @@
-import type { MessagePriority } from './enums';
+import type { MessagePriority } from './enums.js';
 
 export const MESSAGE_COST_CENTS = {
   normal: 25,

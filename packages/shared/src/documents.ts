@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { DocumentType } from './enums';
+import type { DocumentType } from './enums.js';
 
 const FORMATTING_CHARACTERS = /[./\s-]/g;
 const DIGITS_ONLY = /^\d+$/;

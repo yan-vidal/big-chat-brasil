@@ -1,4 +1,4 @@
-import { AppService } from './app.service';
+import { AppService } from './app.service.js';
 
 describe('AppService', () => {
   it('returns the API health payload', () => {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { MessagePrioritySchema, MessageStatusSchema, SenderTypeSchema } from '../enums';
-import { IdSchema, IsoDateTimeSchema, MoneyCentsSchema } from './common';
+import { MessagePrioritySchema, MessageStatusSchema, SenderTypeSchema } from '../enums.js';
+import { IdSchema, IsoDateTimeSchema, MoneyCentsSchema } from './common.js';
 
 export const SendMessageRequestSchema = z
   .object({

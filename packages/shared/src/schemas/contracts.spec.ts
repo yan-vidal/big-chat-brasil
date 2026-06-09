@@ -1,13 +1,13 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { AuthSessionRequestSchema, type AuthSessionRequest } from './auth';
-import { BillingSummaryResponseSchema, type BillingSummaryResponse } from './billing';
-import { ConversationResponseSchema } from './conversation';
+import { AuthSessionRequestSchema, type AuthSessionRequest } from './auth.js';
+import { BillingSummaryResponseSchema, type BillingSummaryResponse } from './billing.js';
+import { ConversationResponseSchema } from './conversation.js';
 import {
   SendMessageRequestSchema,
   SendMessageResponseSchema,
   type SendMessageRequest,
-} from './message';
-import { OnboardingRequestSchema, type OnboardingRequest } from './onboarding';
+} from './message.js';
+import { OnboardingRequestSchema, type OnboardingRequest } from './onboarding.js';
 
 describe('auth and onboarding contracts', () => {
   it('normalizes a valid auth document', () => {

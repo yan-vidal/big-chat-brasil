@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { DocumentIdSchema, inferDocumentType } from '../documents';
-import { DocumentTypeSchema, PlanTypeSchema, RoleSchema } from '../enums';
-import { IdSchema, MoneyCentsSchema } from './common';
+import { DocumentIdSchema, inferDocumentType } from '../documents.js';
+import { DocumentTypeSchema, PlanTypeSchema, RoleSchema } from '../enums.js';
+import { IdSchema, MoneyCentsSchema } from './common.js';
 
 export const JwtPayloadSchema = z.object({
   sub: IdSchema,

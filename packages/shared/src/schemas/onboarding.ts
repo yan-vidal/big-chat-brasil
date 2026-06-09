@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { AuthenticatedClientSchema } from './auth';
-import { PositiveMoneyCentsSchema } from './common';
+import { AuthenticatedClientSchema } from './auth.js';
+import { PositiveMoneyCentsSchema } from './common.js';
 
 const ClientNameSchema = z.string().trim().min(1).max(120);
 

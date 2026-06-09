@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IdSchema, IsoDateTimeSchema } from './common';
+import { IdSchema, IsoDateTimeSchema } from './common.js';
 
 export const RecipientResponseSchema = z.object({
   id: IdSchema,

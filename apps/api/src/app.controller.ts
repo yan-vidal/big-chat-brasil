@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService, type HealthResponse } from './app.service';
+import { AppService, type HealthResponse } from './app.service.js';
 
 @Controller()
 export class AppController {

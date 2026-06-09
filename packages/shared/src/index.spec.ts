@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AuthSessionRequestSchema, MESSAGE_COST_CENTS, MessageStatusSchema } from './index';
+import { AuthSessionRequestSchema, MESSAGE_COST_CENTS, MessageStatusSchema } from './index.js';
 
 describe('@bcb/shared public exports', () => {
   it('exports contracts and constants through the package barrel', () => {

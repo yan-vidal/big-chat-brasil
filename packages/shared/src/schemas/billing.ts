@@ -3,14 +3,14 @@ import {
   BillingTransactionTypeSchema,
   PaymentIntentStatusSchema,
   PaymentMethodSchema,
-} from '../enums';
+} from '../enums.js';
 import {
   IdSchema,
   IsoDateTimeSchema,
   MoneyCentsSchema,
   PositiveMoneyCentsSchema,
   UsageMonthSchema,
-} from './common';
+} from './common.js';
 
 export const BillingTransactionResponseSchema = z.object({
   id: IdSchema,
