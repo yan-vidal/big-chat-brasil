@@ -1,5 +1,9 @@
-export const sharedPackageName = '@bcb/shared';
-
-export function getSharedPackageName(): string {
-  return sharedPackageName;
-}
+export * from './documents';
+export * from './enums';
+export * from './money';
+export * from './schemas/auth';
+export * from './schemas/billing';
+export * from './schemas/common';
+export * from './schemas/conversation';
+export * from './schemas/message';
+export * from './schemas/onboarding';

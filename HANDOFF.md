@@ -28,6 +28,17 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - `docker compose config` passou.
   - `docker compose up --detach db` subiu PostgreSQL `healthy`; `docker compose down` derrubou sem erro.
 - Estado operacional ao encerrar Sprint 0: sem containers ativos do Compose; branch local `sprint-0-monorepo` contém o commit de planejamento e o commit de scaffold.
+- Handoff pós-Sprint 0 commitado em `382e391` (`docs: update handoff after sprint 0`).
+- **Sprint 1 implementada e com gates verdes, aguardando revisão/commit**:
+  - Plano detalhado: `docs/superpowers/plans/2026-06-09-sprint-1-shared-contracts.md`.
+  - `packages/shared/src/enums.ts`: roles, planos, tipos de documento, prioridades, status, sender, PIX e tipos de transação.
+  - `packages/shared/src/documents.ts`: normalização conservadora, CPF/CNPJ por dígito verificador e inferência de tipo.
+  - `packages/shared/src/money.ts`: custos de 25/50 centavos e `ESTIMATED_DELIVERY_SECONDS = 5`.
+  - `packages/shared/src/schemas/`: common, auth, onboarding, billing, conversation e message.
+  - `packages/shared/src/index.ts`: barrel público para API/web.
+  - TDD observado: cada módulo começou com teste falhando por import/export ausente e passou após a implementação.
+  - Gate isolado: `@bcb/shared` com 5 arquivos e 23 testes passando, lint e build verdes.
+  - Gates raiz finais: `pnpm lint`, `pnpm test` e `pnpm build` passaram; Prettier passou no código/plano da Sprint 1.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -42,15 +53,19 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Iniciar a **Sprint 1 - Contratos compartilhados** a partir do commit `df188bc`.
-3. Antes de codar, gerar plano detalhado da Sprint 1 em `docs/superpowers/plans/`, cobrindo enums, CPF/CNPJ, schemas Zod, tipos inferidos e cálculo de custo.
-4. Executar Sprint 1 com TDD: escrever testes em `packages/shared` primeiro, observar RED, implementar, observar GREEN, rodar gates e perguntar ao Yan antes do commit.
+2. Revisar e commitar a Sprint 1, se ainda estiver pendente:
+   ```bash
+   git add HANDOFF.md docs/superpowers/plans/2026-06-09-sprint-1-shared-contracts.md packages/shared/src
+   git commit -m "feat(shared): add contracts and document validation"
+   ```
+3. Iniciar a **Sprint 2 - Banco, Kysely e seed** somente após o commit da Sprint 1.
+4. Antes de codar Sprint 2, gerar plano detalhado em `docs/superpowers/plans/`; incluir PostgreSQL real, migrations, tipos Kysely, helpers de documento para testes e seed com as fixtures cravadas.
 
 ## Skills sugeridas para o próximo agente
 
 - `superpowers:using-superpowers` — ativar workflow de skills no início.
 - `tlc-spec-driven` — manter sprints sequenciais, rastreio de decisões e handoff.
-- `superpowers:writing-plans` — criar o plano detalhado da Sprint 1 antes de tocar código.
+- `superpowers:writing-plans` — criar o plano detalhado da próxima sprint antes de tocar código.
 - `superpowers:test-driven-development` — obrigatório para contratos/validadores.
 - `superpowers:systematic-debugging` — usar em qualquer falha de teste/build.
 - `superpowers:verification-before-completion` — rodar e registrar gates antes de afirmar conclusão.
