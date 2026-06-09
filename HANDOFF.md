@@ -9,7 +9,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 ## Estado atual (2026-06-09)
 
 - Planejamento completo, revisado e commitado em `fed6f79` (`docs: add implementation, architecture and testing plans`).
-- Branch de implementação atual: `sprint-0-monorepo`.
+- Branch de implementação atual: `sprint-0-monorepo`. Ela ainda pode ser usada para continuar o trabalho local sem fragmentar contexto, mas o nome já ficou estreito; antes de push/PR público, considerar renomear para `challenge-implementation` ou `bcb-implementation`.
 - **Sprint 0 implementada, verificada e commitada em `df188bc`** (`chore: scaffold monorepo workspace`):
   - `pnpm-workspace.yaml`, `package.json`, `tsconfig.base.json`, ESLint, Prettier e lockfile.
   - `packages/shared` (`@bcb/shared`) com smoke test Vitest e build TypeScript.
@@ -29,7 +29,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - `docker compose up --detach db` subiu PostgreSQL `healthy`; `docker compose down` derrubou sem erro.
 - Estado operacional ao encerrar Sprint 0: sem containers ativos do Compose; branch local `sprint-0-monorepo` contém o commit de planejamento e o commit de scaffold.
 - Handoff pós-Sprint 0 commitado em `382e391` (`docs: update handoff after sprint 0`).
-- **Sprint 1 implementada e com gates verdes, aguardando revisão/commit**:
+- **Sprint 1 implementada, verificada e commitada em `2e6709a`** (`feat(shared): add contracts and document validation`):
   - Plano detalhado: `docs/superpowers/plans/2026-06-09-sprint-1-shared-contracts.md`.
   - `packages/shared/src/enums.ts`: roles, planos, tipos de documento, prioridades, status, sender, PIX e tipos de transação.
   - `packages/shared/src/documents.ts`: normalização conservadora, CPF/CNPJ por dígito verificador e inferência de tipo.
@@ -39,6 +39,16 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - TDD observado: cada módulo começou com teste falhando por import/export ausente e passou após a implementação.
   - Gate isolado: `@bcb/shared` com 5 arquivos e 23 testes passando, lint e build verdes.
   - Gates raiz finais: `pnpm lint`, `pnpm test` e `pnpm build` passaram; Prettier passou no código/plano da Sprint 1.
+- **Bloco antecipado de Playwright consolidado no commit `test(web): add playwright smoke check`**:
+  - `@playwright/test` `1.60.0` adicionado ao `@bcb/web`; `pnpm test:e2e` chama `@bcb/web test:e2e`.
+  - `apps/web/playwright.config.ts` roda um smoke em Chromium desktop usando `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable` quando disponível.
+  - O e2e usa build estático (`pnpm build && node e2e/static-server.mjs --port 4200`) em vez de `ng serve`; isso evita a falha de resolução do dev server Angular/Vite sob pnpm e testa um artefato mais próximo do deploy.
+  - `apps/web/e2e/shell.spec.ts` abre `/login`, valida textos da shell e também estilos computados (`header` flex, título `20px`/`600`), anexando screenshot `login-shell`.
+  - O ciclo red/green visual foi observado: o teste falhou com `header` computado como `display: block`; a causa era o Tailwind não rodando via PostCSS.
+  - Correção aplicada: Angular 22 só carrega `postcss.config.json`/`.postcssrc.json`; `postcss.config.mjs` foi removido e substituído por `postcss.config.json`. `apps/web/src/styles.css` ganhou `@source './**/*.{ts,html}'`.
+  - Captura visual pós-correção validada: fundo slate, conteúdo centralizado, título à esquerda, `Sprint 0` à direita e separador do header.
+  - Gates finais deste bloco passaram: `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` e `pnpm exec prettier --check ...` nos arquivos tocados.
+  - Tudo deste bloco deve permanecer em um único commit coeso: Playwright, servidor estático, PostCSS/Tailwind, ESLint `.mjs`, lockfile, `.gitignore` e este handoff.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -53,13 +63,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Revisar e commitar a Sprint 1, se ainda estiver pendente:
-   ```bash
-   git add HANDOFF.md docs/superpowers/plans/2026-06-09-sprint-1-shared-contracts.md packages/shared/src
-   git commit -m "feat(shared): add contracts and document validation"
-   ```
-3. Iniciar a **Sprint 2 - Banco, Kysely e seed** somente após o commit da Sprint 1.
-4. Antes de codar Sprint 2, gerar plano detalhado em `docs/superpowers/plans/`; incluir PostgreSQL real, migrations, tipos Kysely, helpers de documento para testes e seed com as fixtures cravadas.
+2. Iniciar a **Sprint 2 - Banco, Kysely e seed**.
+3. Antes de codar Sprint 2, gerar plano detalhado em `docs/superpowers/plans/`; incluir PostgreSQL real, migrations, tipos Kysely, helpers de documento para testes e seed com as fixtures cravadas.
 
 ## Skills sugeridas para o próximo agente
 
@@ -84,6 +89,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - Testes de integração rodam com `RECIPIENT_SIMULATOR_ENABLED=false` e delays de fila zerados, senão os status finais ficam não determinísticos.
 - Dinheiro sempre em centavos (int); débito/consumo via `UPDATE` condicional atômico — exemplos prontos na seção Kysely do architecture-plan, não improvisar outro padrão.
 - O docker compose final (Sprint 10) precisa rodar `db:migrate` + `db:seed` sozinho: o avaliador não executa passos manuais.
+- Angular 22 neste repo não lê `postcss.config.mjs`; manter `postcss.config.json` para o Tailwind 4 realmente gerar utilities.
+- E2E local depende do Chrome do sistema em `/usr/bin/google-chrome-stable` via `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`; sem isso o Playwright pode tentar usar browser baixado.
 
 ## Pendências que dependem do Yan
 

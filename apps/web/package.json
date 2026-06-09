@@ -7,7 +7,7 @@
     "lint": "eslint .",
     "start": "ng serve --host 0.0.0.0",
     "test": "echo \"@bcb/web component tests start in Sprint 7\"",
-    "test:e2e": "echo \"@bcb/web e2e tests start in Sprint 10\""
+    "test:e2e": "playwright test -c playwright.config.ts"
   },
   "dependencies": {
     "@angular/common": "22.0.0",
@@ -26,6 +26,7 @@
     "@angular/build": "22.0.0",
     "@angular/cli": "22.0.0",
     "@angular/compiler-cli": "22.0.0",
+    "@playwright/test": "1.60.0",
     "@tailwindcss/postcss": "4.3.0",
     "tailwindcss": "4.3.0"
   }
