@@ -10,14 +10,14 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 
 - Planejamento completo, revisado e commitado em `fed6f79` (`docs: add implementation, architecture and testing plans`).
 - Branch de implementação atual: `sprint-0-monorepo`.
-- **Sprint 0 implementada e com gates verdes**, aguardando revisão/commit do bloco:
+- **Sprint 0 implementada, verificada e commitada em `df188bc`** (`chore: scaffold monorepo workspace`):
   - `pnpm-workspace.yaml`, `package.json`, `tsconfig.base.json`, ESLint, Prettier e lockfile.
   - `packages/shared` (`@bcb/shared`) com smoke test Vitest e build TypeScript.
   - `apps/api` (`@bcb/api`) com NestJS mínimo, `/health`, smoke test Jest, build e lint.
   - `apps/web` (`@bcb/web`) com Angular 22 standalone, rotas profundas planejadas e Tailwind 4.
   - `.env.example` e `docker-compose.yml` com PostgreSQL, API e web base.
 - Plano detalhado da Sprint 0 salvo em `docs/superpowers/plans/2026-06-09-sprint-0-monorepo.md`.
-- Gates executados nesta sessão:
+- Gates executados antes do commit `df188bc`:
   - `pnpm --filter @bcb/shared test` falhou primeiro por `./index` ausente e depois passou 1/1.
   - `pnpm --filter @bcb/api test` falhou primeiro por `./app.service` ausente e depois passou 1/1.
   - `pnpm --filter @bcb/web build` falhou primeiro por `baseUrl` depreciado no TypeScript 6; removido e depois passou.
@@ -27,6 +27,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - `pnpm exec prettier --check ...` passou nos arquivos novos/alterados com parser conhecido.
   - `docker compose config` passou.
   - `docker compose up --detach db` subiu PostgreSQL `healthy`; `docker compose down` derrubou sem erro.
+- Estado operacional ao encerrar Sprint 0: sem containers ativos do Compose; branch local `sprint-0-monorepo` contém o commit de planejamento e o commit de scaffold.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -36,13 +37,23 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 
 ## Sua próxima ação
 
-1. Revisar o diff da Sprint 0 e commitar o bloco, se ainda não estiver commitado:
+1. Confirmar status:
    ```bash
-   git add .
-   git commit -m "chore: scaffold monorepo workspace"
+   git status --short --branch
+   git log --oneline --decorate -3
    ```
-2. Iniciar a **Sprint 1 - Contratos compartilhados** somente após a Sprint 0 estar commitada.
-3. Para Sprint 1, ler `IMPLEMENTATION_PLAN.md`, `docs/architecture-plan.md` e `docs/testing-strategy.md`, gerar plano detalhado em `docs/superpowers/plans/` e seguir TDD.
+2. Iniciar a **Sprint 1 - Contratos compartilhados** a partir do commit `df188bc`.
+3. Antes de codar, gerar plano detalhado da Sprint 1 em `docs/superpowers/plans/`, cobrindo enums, CPF/CNPJ, schemas Zod, tipos inferidos e cálculo de custo.
+4. Executar Sprint 1 com TDD: escrever testes em `packages/shared` primeiro, observar RED, implementar, observar GREEN, rodar gates e perguntar ao Yan antes do commit.
+
+## Skills sugeridas para o próximo agente
+
+- `superpowers:using-superpowers` — ativar workflow de skills no início.
+- `tlc-spec-driven` — manter sprints sequenciais, rastreio de decisões e handoff.
+- `superpowers:writing-plans` — criar o plano detalhado da Sprint 1 antes de tocar código.
+- `superpowers:test-driven-development` — obrigatório para contratos/validadores.
+- `superpowers:systematic-debugging` — usar em qualquer falha de teste/build.
+- `superpowers:verification-before-completion` — rodar e registrar gates antes de afirmar conclusão.
 
 ## Regras inegociáveis (detalhes nos documentos)
 
