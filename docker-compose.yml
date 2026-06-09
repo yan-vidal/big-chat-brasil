@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: bcb
+      POSTGRES_PASSWORD: bcb
+      POSTGRES_DB: bcb
+    ports:
+      - '5432:5432'
+    volumes:
+      - bcb-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bcb -d bcb']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: node:22-slim
+    working_dir: /workspace
+    command: >
+      sh -c "corepack enable &&
+      corepack prepare pnpm@10.33.0 --activate &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @bcb/api start:dev"
+    environment:
+      DATABASE_URL: postgres://bcb:bcb@db:5432/bcb
+      JWT_SECRET: dev-secret-change-me
+      JWT_EXPIRES_IN: 1d
+      API_PORT: 3000
+      CORS_ORIGIN: http://localhost:4200
+      QUEUE_SENT_DELAY_MS: 500
+      QUEUE_DELIVERED_DELAY_MS: 1000
+      RECIPIENT_SIMULATOR_ENABLED: 'true'
+      RECIPIENT_SIMULATOR_READ_DELAY_MS: 1500
+      RECIPIENT_SIMULATOR_TYPING_MS: 2000
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/workspace
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: node:22-slim
+    working_dir: /workspace
+    command: >
+      sh -c "corepack enable &&
+      corepack prepare pnpm@10.33.0 --activate &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @bcb/web start"
+    environment:
+      API_BASE_URL: http://localhost:3000
+    ports:
+      - '4200:4200'
+    volumes:
+      - .:/workspace
+    depends_on:
+      - api
+
+volumes:
+  bcb-postgres-data:

@@ -8,24 +8,41 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 
 ## Estado atual (2026-06-09)
 
-- **Nenhum código implementado. Sprint 0 não iniciada.**
-- Planejamento completo, revisado e pronto para execução (feito com Codex, revisado por Claude em 2026-06-09):
+- Planejamento completo, revisado e commitado em `fed6f79` (`docs: add implementation, architecture and testing plans`).
+- Branch de implementação atual: `sprint-0-monorepo`.
+- **Sprint 0 implementada e com gates verdes**, aguardando revisão/commit do bloco:
+  - `pnpm-workspace.yaml`, `package.json`, `tsconfig.base.json`, ESLint, Prettier e lockfile.
+  - `packages/shared` (`@bcb/shared`) com smoke test Vitest e build TypeScript.
+  - `apps/api` (`@bcb/api`) com NestJS mínimo, `/health`, smoke test Jest, build e lint.
+  - `apps/web` (`@bcb/web`) com Angular 22 standalone, rotas profundas planejadas e Tailwind 4.
+  - `.env.example` e `docker-compose.yml` com PostgreSQL, API e web base.
+- Plano detalhado da Sprint 0 salvo em `docs/superpowers/plans/2026-06-09-sprint-0-monorepo.md`.
+- Gates executados nesta sessão:
+  - `pnpm --filter @bcb/shared test` falhou primeiro por `./index` ausente e depois passou 1/1.
+  - `pnpm --filter @bcb/api test` falhou primeiro por `./app.service` ausente e depois passou 1/1.
+  - `pnpm --filter @bcb/web build` falhou primeiro por `baseUrl` depreciado no TypeScript 6; removido e depois passou.
+  - `pnpm lint` passou.
+  - `pnpm test` passou (`@bcb/api` 1/1, `@bcb/shared` 1/1, `@bcb/web` placeholder de Sprint 7).
+  - `pnpm build` passou para API, shared e web.
+  - `pnpm exec prettier --check ...` passou nos arquivos novos/alterados com parser conhecido.
+  - `docker compose config` passou.
+  - `docker compose up --detach db` subiu PostgreSQL `healthy`; `docker compose down` derrubou sem erro.
+- Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
+- Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
   - `docs/architecture-plan.md` — módulos NestJS/Angular, modelo de dados, exemplos Kysely prontos (débito atômico, reset preguiçoso), simulador de destinatário, eventos WebSocket, códigos de erro com HTTP.
   - `docs/testing-strategy.md` — runners por pacote, casos críticos, fixtures cravadas, determinismo de E2E.
 - Documentos originais do desafio (especificação de referência, **não editar**): `README.md`, `docs/backend.md`, `docs/frontend.md`, `docs/fullstack.md`, `docs/regras-negocio.md`, `docs/requisitos-tecnicos.md`, `docs/dicas.md`.
-- Os 3 documentos de planejamento e este handoff estão **untracked** no git (branch `main`; commits existentes são só o upload do enunciado).
-- Não existe nenhuma decisão tomada fora desses documentos. Este handoff é completo.
 
 ## Sua próxima ação
 
-1. Commitar o planejamento:
+1. Revisar o diff da Sprint 0 e commitar o bloco, se ainda não estiver commitado:
    ```bash
-   git add IMPLEMENTATION_PLAN.md docs/architecture-plan.md docs/testing-strategy.md HANDOFF.md
-   git commit -m "docs: add implementation, architecture and testing plans"
+   git add .
+   git commit -m "chore: scaffold monorepo workspace"
    ```
-2. Ler, nesta ordem: `IMPLEMENTATION_PLAN.md` → `docs/architecture-plan.md` → `docs/testing-strategy.md`.
-3. Executar a **Sprint 0** seguindo o processo da seção "Como Executar Este Plano": gerar o plano detalhado da sprint com a skill `superpowers:writing-plans`, salvar em `docs/superpowers/plans/`, executar com `superpowers:subagent-driven-development` (ou `superpowers:executing-plans`).
+2. Iniciar a **Sprint 1 - Contratos compartilhados** somente após a Sprint 0 estar commitada.
+3. Para Sprint 1, ler `IMPLEMENTATION_PLAN.md`, `docs/architecture-plan.md` e `docs/testing-strategy.md`, gerar plano detalhado em `docs/superpowers/plans/` e seguir TDD.
 
 ## Regras inegociáveis (detalhes nos documentos)
 
