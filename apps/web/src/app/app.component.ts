@@ -36,6 +36,7 @@ import { PreferencesService, type SupportedLanguage } from './core/preferences/p
             >
               <option value="pt-BR">Português</option>
               <option value="en-US">English</option>
+              <option value="es-ES">Español</option>
             </select>
 
             <button
@@ -132,7 +133,7 @@ export class AppComponent {
   protected changeLanguage(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
 
-    if (value === 'pt-BR' || value === 'en-US') {
+    if (value === 'pt-BR' || value === 'en-US' || value === 'es-ES') {
       this.preferences.setLanguage(value satisfies SupportedLanguage);
     }
   }

@@ -1,0 +1,139 @@
+{
+  "shell": {
+    "subtitle": "Operación de chat con cola prioritaria",
+    "languageLabel": "Idioma",
+    "primaryNavigation": "Principal",
+    "darkTheme": "Tema oscuro",
+    "lightTheme": "Tema claro"
+  },
+  "nav": {
+    "login": "Acceso",
+    "onboarding": "Onboarding",
+    "conversations": "Conversaciones",
+    "billing": "Facturación",
+    "admin": "Administración",
+    "logout": "Salir"
+  },
+  "auth": {
+    "kicker": "Identificación",
+    "title": "Acceso del cliente",
+    "description": "Entrada por CPF o CNPJ con contraseña. Los clientes nuevos continúan con la activación del plan.",
+    "documentLabel": "Documento",
+    "passwordLabel": "Contraseña",
+    "submit": "Entrar",
+    "loading": "Procesando",
+    "errors": {
+      "invalidDocument": "Documento inválido",
+      "requestFailed": "No fue posible autenticar con esos datos"
+    }
+  },
+  "onboarding": {
+    "kicker": "Activación",
+    "title": "Onboarding",
+    "description": "Elige el plan y completa la activación de la cuenta.",
+    "nameLabel": "Nombre",
+    "planLabel": "Plan",
+    "prepaidOption": "Prepago",
+    "postpaidOption": "Pospago",
+    "initialCreditLabel": "Crédito inicial",
+    "monthlyLimitLabel": "Límite mensual",
+    "generatePix": "Generar PIX",
+    "activatePlan": "Activar plan",
+    "pixPending": "PIX simulado pendiente",
+    "confirmPix": "Ya pagué",
+    "errors": {
+      "invalidForm": "Completa los datos del plan",
+      "requestFailed": "No fue posible activar el plan"
+    }
+  },
+  "conversations": {
+    "kicker": "Atención",
+    "title": "Conversaciones",
+    "description": "Historial reciente con prioridad, lectura y saldo operativo.",
+    "balance": "Saldo {{amount}}",
+    "limit": "Límite {{limit}} · Restante {{remaining}}",
+    "newConversation": "Nueva conversación",
+    "recipientLabel": "Destinatario",
+    "initialMessageLabel": "Mensaje inicial",
+    "sendNewConversation": "Enviar nueva conversación",
+    "searchLabel": "Buscar conversación",
+    "listLabel": "Lista de conversaciones",
+    "loading": "Cargando conversaciones...",
+    "emptyMessage": "Aún no hay mensajes",
+    "emptySearch": "No se encontraron conversaciones.",
+    "unread": "{{count}} no leídas",
+    "feedback": {
+      "invalidNewConversation": "Completa el destinatario y el mensaje.",
+      "newConversationSent": "Mensaje inicial enviado",
+      "newConversationFailed": "No fue posible enviar el mensaje inicial.",
+      "recipientsFailed": "No fue posible cargar los destinatarios."
+    },
+    "errors": {
+      "loadFailed": "No fue posible cargar las conversaciones."
+    }
+  },
+  "conversation": {
+    "kicker": "Conversación",
+    "loadingTitle": "Cargando...",
+    "back": "Volver",
+    "typing": "{{name}} está escribiendo...",
+    "historyLabel": "Historial de la conversación",
+    "loading": "Cargando mensajes...",
+    "empty": "Aún no hay mensajes en esta conversación.",
+    "messageLabel": "Mensaje",
+    "priorityLabel": "Prioridad",
+    "normalPriority": "Normal",
+    "urgentPriority": "Urgente",
+    "send": "Enviar",
+    "balance": "Saldo {{amount}}",
+    "remaining": "Restante {{amount}}",
+    "errors": {
+      "invalidMessage": "Ingresa un mensaje válido.",
+      "sendFailed": "No fue posible enviar el mensaje.",
+      "loadFailed": "No fue posible cargar esta conversación."
+    },
+    "status": {
+      "queued": "En cola",
+      "processing": "Procesando",
+      "sent": "Enviado",
+      "delivered": "Entregado",
+      "read": "Leído",
+      "failed": "Falló"
+    }
+  },
+  "billing": {
+    "kicker": "Finanzas",
+    "title": "Facturación",
+    "description": "Resumen financiero actual del plan, consumo y transacciones.",
+    "loading": "Cargando facturación...",
+    "planLabel": "Plan",
+    "prepaidPlan": "Plan prepago",
+    "postpaidPlan": "Plan pospago",
+    "balanceLabel": "Saldo disponible",
+    "monthlyLimitLabel": "Límite mensual",
+    "monthlyUsedLabel": "Usado en el mes",
+    "remainingLabel": "Restante",
+    "usageMonthLabel": "Mes de uso",
+    "transactionsTitle": "Historial de transacciones",
+    "typeHeader": "Tipo",
+    "amountHeader": "Valor",
+    "referenceHeader": "Origen",
+    "createdHeader": "Creado el",
+    "emptyTransactions": "No hay transacciones registradas.",
+    "references": {
+      "payment": "PIX",
+      "message": "Mensaje",
+      "manual": "Manual"
+    },
+    "transactionTypes": {
+      "credit": "Crédito",
+      "debit": "Débito",
+      "usage": "Uso",
+      "refund": "Reembolso",
+      "adjustment": "Ajuste"
+    },
+    "errors": {
+      "loadFailed": "No fue posible cargar la facturación."
+    }
+  }
+}

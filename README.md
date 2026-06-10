@@ -59,6 +59,7 @@ Também é possível entrar com um CPF/CNPJ válido novo e senha qualquer. A con
 - Onboarding pré-pago com PIX simulado e pós-pago com limite mensal.
 - Listagem de conversas, busca, badges de não lidas e criação de nova conversa com recipients simulados ou contas reais.
 - Tela de conversa com histórico, bolhas, status, prioridade normal/urgente e composer.
+- Interface com i18n em português, inglês e espanhol, com preferência persistida.
 - Conversa real entre contas CPF/CNPJ onboarded: a mensagem aparece no inbox do destinatário logado e pode receber resposta pela mesma tela.
 - Cobrança por mensagem: normal `R$0,25`, urgente `R$0,50`.
 - Fila processada por worker separado, com prioridade urgente, anti-starvation, polling do banco e recuperação de mensagens pendentes.

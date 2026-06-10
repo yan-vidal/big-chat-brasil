@@ -1,14 +1,15 @@
 import { Injectable, signal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import enUsTranslations from '../../../assets/i18n/en-US.json';
+import esEsTranslations from '../../../assets/i18n/es-ES.json';
 import ptBrTranslations from '../../../assets/i18n/pt-BR.json';
 
-export type SupportedLanguage = 'pt-BR' | 'en-US';
+export type SupportedLanguage = 'pt-BR' | 'en-US' | 'es-ES';
 export type ThemePreference = 'light' | 'dark';
 
 const LANGUAGE_KEY = 'bcb.preferences.language';
 const THEME_KEY = 'bcb.preferences.theme';
-const SUPPORTED_LANGUAGES: readonly SupportedLanguage[] = ['pt-BR', 'en-US'];
+const SUPPORTED_LANGUAGES: readonly SupportedLanguage[] = ['pt-BR', 'en-US', 'es-ES'];
 type TranslationTable = Parameters<TranslateService['setTranslation']>[1];
 
 @Injectable({ providedIn: 'root' })
@@ -24,6 +25,7 @@ export class PreferencesService {
     this.translate.addLangs([...SUPPORTED_LANGUAGES]);
     this.translate.setTranslation('pt-BR', ptBrTranslations as TranslationTable);
     this.translate.setTranslation('en-US', enUsTranslations as TranslationTable);
+    this.translate.setTranslation('es-ES', esEsTranslations as TranslationTable);
     this.translate.setFallbackLang('pt-BR');
     this.translate.use(this.languageSignal());
     this.applyTheme(this.themeSignal());
@@ -53,7 +55,11 @@ export class PreferencesService {
 function readLanguage(): SupportedLanguage {
   const value = globalThis.localStorage?.getItem(LANGUAGE_KEY);
 
-  return value === 'en-US' ? 'en-US' : 'pt-BR';
+  return isSupportedLanguage(value) ? value : 'pt-BR';
+}
+
+function isSupportedLanguage(value: string | null | undefined): value is SupportedLanguage {
+  return value === 'pt-BR' || value === 'en-US' || value === 'es-ES';
 }
 
 function readTheme(): ThemePreference {

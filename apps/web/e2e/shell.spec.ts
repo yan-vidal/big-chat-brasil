@@ -48,11 +48,17 @@ test.describe('BCB Angular shell', () => {
     await expect(page.getByLabel('Language')).toHaveValue('en-US');
     await expect(page.getByRole('heading', { name: 'Client access' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Dark theme' }).click();
+    await page.getByLabel('Language').selectOption('es-ES');
+    await expect(page.getByRole('heading', { name: 'Acceso del cliente' })).toBeVisible();
+    await page.reload();
+    await expect(page.getByLabel('Idioma')).toHaveValue('es-ES');
+    await expect(page.getByRole('heading', { name: 'Acceso del cliente' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Tema oscuro' }).click();
     await expect(page.locator('html')).toHaveClass(/dark/);
     await page.reload();
     await expect(page.locator('html')).toHaveClass(/dark/);
-    await expect(page.getByRole('button', { name: 'Light theme' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Tema claro' })).toBeVisible();
   });
 
   test('redirects protected routes by session and onboarding state', async ({ page }) => {
