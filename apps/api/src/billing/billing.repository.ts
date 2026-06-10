@@ -79,6 +79,8 @@ export class BillingRepository {
       .where('id', '=', clientId)
       .executeTakeFirstOrThrow();
 
+    await this.upsertAccountRecipient(this.database.db, clientId, name);
+
     return this.findProfileOrThrow(clientId);
   }
 
@@ -167,6 +169,8 @@ export class BillingRepository {
         }))
         .where('id', '=', clientId)
         .executeTakeFirstOrThrow();
+
+      await this.upsertAccountRecipient(transaction, clientId, profile.name);
 
       const billingTransaction = await transaction
         .insertInto('billing_transactions')
@@ -424,5 +428,24 @@ export class BillingRepository {
         'confirmed_at as confirmedAt',
         'created_at as createdAt',
       ]);
+  }
+
+  private async upsertAccountRecipient(
+    db: DatabaseExecutor,
+    clientId: string,
+    name: string,
+  ): Promise<void> {
+    await db
+      .insertInto('recipients')
+      .values({
+        name,
+        client_profile_id: clientId,
+      })
+      .onConflict((oc) =>
+        oc.column('client_profile_id').doUpdateSet({
+          name,
+        }),
+      )
+      .execute();
   }
 }

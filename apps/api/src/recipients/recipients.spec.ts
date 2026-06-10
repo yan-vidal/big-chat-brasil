@@ -18,6 +18,11 @@ type SessionResponse = {
   readonly token: string;
 };
 
+type RecipientListItem = {
+  readonly id: string;
+  readonly name: string;
+};
+
 describeDatabase('recipients HTTP API', () => {
   let app: INestApplication;
   let db: Kysely<Database>;
@@ -58,20 +63,44 @@ describeDatabase('recipients HTTP API', () => {
     return response.body as SessionResponse;
   }
 
-  it('lists the seeded recipient catalog for an onboarded client', async () => {
+  it('lists simulated recipients and other onboarded accounts for an onboarded client', async () => {
     const session = await createSession('11222333000181', 'CNPJ');
 
     const response = await request(server)
       .get('/recipients')
       .set('Authorization', `Bearer ${session.token}`)
       .expect(200);
+    const recipients = response.body as RecipientListItem[];
 
-    expect(response.body).toEqual([
-      expect.objectContaining({ name: 'Ana Costa' }),
-      expect.objectContaining({ name: 'Carlos Pereira' }),
-      expect.objectContaining({ name: 'Maria Oliveira' }),
-      expect.objectContaining({ name: 'Pedro Santos' }),
-    ]);
+    expect(recipients).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Ana Costa' }),
+        expect.objectContaining({ name: 'Carlos Pereira' }),
+        expect.objectContaining({ name: 'Maria Oliveira' }),
+        expect.objectContaining({ name: 'Pedro Santos' }),
+        expect.objectContaining({ name: 'Cliente Pós-pago Com Limite' }),
+        expect.objectContaining({ name: 'Cliente Pré-pago Sem Saldo' }),
+      ]),
+    );
+    expect(recipients).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'Empresa ABC' })]),
+    );
+  });
+
+  it('keeps simulated recipients visible for real account recipients', async () => {
+    const session = await createSession('11444777000161', 'CNPJ');
+
+    const response = await request(server)
+      .get('/recipients')
+      .set('Authorization', `Bearer ${session.token}`)
+      .expect(200);
+
+    expect(response.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Empresa ABC' }),
+        expect.objectContaining({ name: 'Ana Costa' }),
+      ]),
+    );
   });
 
   it('requires completed onboarding before listing recipients', async () => {

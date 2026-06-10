@@ -46,6 +46,7 @@ export interface ClientProfileTable {
 export interface RecipientTable {
   id: Generated<string>;
   name: string;
+  client_profile_id: ColumnType<string | null, string | null | undefined, string | null>;
   created_at: TimestampColumn;
 }
 

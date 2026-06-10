@@ -1,10 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
+import type { Database } from '../database/database.types.js';
 import type { MessagePriority, MessageStatus } from '@bcb/shared';
+import type { Kysely, Transaction } from 'kysely';
 
 export type ConversationReference = {
   readonly id: string;
   readonly recipientId: string;
+};
+
+export type RecipientReference = {
+  readonly id: string;
+  readonly linkedClientId: string | null;
 };
 
 export type MessageRow = {
@@ -32,6 +39,23 @@ export type ConversationUpdateRow = {
   readonly unreadCount: number;
 };
 
+export type MirroredConversationUpdateRow = ConversationUpdateRow & {
+  readonly clientId: string;
+};
+
+export type MirroredMessageResult = {
+  readonly clientId: string;
+  readonly message: MessageRow;
+  readonly conversation: MirroredConversationUpdateRow;
+};
+
+export type CreateClientMessageResult = {
+  readonly message: MessageRow;
+  readonly mirror?: MirroredMessageResult;
+};
+
+type DatabaseExecutor = Kysely<Database> | Transaction<Database>;
+
 @Injectable()
 export class MessagesRepository {
   constructor(private readonly database: DatabaseService) {}
@@ -48,10 +72,10 @@ export class MessagesRepository {
       .executeTakeFirst();
   }
 
-  async findRecipient(recipientId: string): Promise<{ readonly id: string } | undefined> {
+  async findRecipient(recipientId: string): Promise<RecipientReference | undefined> {
     return this.database.db
       .selectFrom('recipients')
-      .select(['id'])
+      .select(['id', 'client_profile_id as linkedClientId'])
       .where('id', '=', recipientId)
       .executeTakeFirst();
   }
@@ -60,7 +84,64 @@ export class MessagesRepository {
     clientId: string,
     recipientId: string,
   ): Promise<ConversationReference> {
-    const existing = await this.database.db
+    return this.findOrCreateConversationIn(this.database.db, clientId, recipientId);
+  }
+
+  async createClientMessage(input: {
+    readonly clientId: string;
+    readonly conversationId: string;
+    readonly content: string;
+    readonly priority: MessagePriority;
+    readonly costCents: number;
+  }): Promise<CreateClientMessageResult> {
+    return this.database.db.transaction().execute(async (trx) => {
+      const message = await trx
+        .insertInto('messages')
+        .values({
+          conversation_id: input.conversationId,
+          sender_type: 'client',
+          content: input.content,
+          priority: input.priority,
+          status: 'queued',
+          cost_cents: input.costCents,
+        })
+        .returning([
+          'id',
+          'conversation_id as conversationId',
+          'content',
+          'sender_type as senderType',
+          'created_at as timestamp',
+          'priority',
+          'status',
+          'cost_cents as cost',
+        ])
+        .executeTakeFirstOrThrow();
+
+      await trx
+        .updateTable('conversations')
+        .set({
+          last_message_content: input.content,
+          last_message_at: message.timestamp,
+          updated_at: message.timestamp,
+        })
+        .where('id', '=', input.conversationId)
+        .execute();
+
+      const mirror = await this.createMirrorMessageIfNeeded(trx, input);
+
+      return {
+        message,
+        ...(mirror ? { mirror } : {}),
+      };
+    });
+  }
+
+  private async findOrCreateConversationIn(
+    db: DatabaseExecutor,
+    clientId: string,
+    recipientId: string,
+  ): Promise<ConversationReference> {
+    const existing = await db
       .selectFrom('conversations')
       .select(['id', 'recipient_id as recipientId'])
       .where('client_id', '=', clientId)
@@ -70,7 +151,7 @@ export class MessagesRepository {
       return existing;
     }
 
-    const inserted = await this.database.db
+    const inserted = await db
       .insertInto('conversations')
       .values({
         client_id: clientId,
@@ -81,47 +162,6 @@ export class MessagesRepository {
       })
       .returning(['id', 'recipient_id as recipientId'])
       .executeTakeFirstOrThrow();
-
-    return inserted;
-  }
-
-  async createClientMessage(input: {
-    readonly conversationId: string;
-    readonly content: string;
-    readonly priority: MessagePriority;
-    readonly costCents: number;
-  }): Promise<MessageRow> {
-    const inserted = await this.database.db
-      .insertInto('messages')
-      .values({
-        conversation_id: input.conversationId,
-        sender_type: 'client',
-        content: input.content,
-        priority: input.priority,
-        status: 'queued',
-        cost_cents: input.costCents,
-      })
-      .returning([
-        'id',
-        'conversation_id as conversationId',
-        'content',
-        'sender_type as senderType',
-        'created_at as timestamp',
-        'priority',
-        'status',
-        'cost_cents as cost',
-      ])
-      .executeTakeFirstOrThrow();
-
-    await this.database.db
-      .updateTable('conversations')
-      .set({
-        last_message_content: input.content,
-        last_message_at: inserted.timestamp,
-        updated_at: inserted.timestamp,
-      })
-      .where('id', '=', input.conversationId)
-      .execute();
 
     return inserted;
   }
@@ -189,5 +229,115 @@ export class MessagesRepository {
       .where('id', '=', conversationId)
       .where('client_id', '=', clientId)
       .executeTakeFirst();
+  }
+
+  private async createMirrorMessageIfNeeded(
+    trx: Transaction<Database>,
+    input: {
+      readonly clientId: string;
+      readonly conversationId: string;
+      readonly content: string;
+      readonly priority: MessagePriority;
+    },
+  ): Promise<MirroredMessageResult | undefined> {
+    const sourceConversation = await trx
+      .selectFrom('conversations')
+      .innerJoin('recipients', 'recipients.id', 'conversations.recipient_id')
+      .select(['recipients.client_profile_id as recipientClientId'])
+      .where('conversations.id', '=', input.conversationId)
+      .where('conversations.client_id', '=', input.clientId)
+      .executeTakeFirst();
+
+    if (!sourceConversation?.recipientClientId) {
+      return undefined;
+    }
+
+    if (sourceConversation.recipientClientId === input.clientId) {
+      return undefined;
+    }
+
+    const senderRecipient = await this.findOrCreateAccountRecipient(trx, input.clientId);
+    const targetConversation = await this.findOrCreateConversationIn(
+      trx,
+      sourceConversation.recipientClientId,
+      senderRecipient.id,
+    );
+    const message = await trx
+      .insertInto('messages')
+      .values({
+        conversation_id: targetConversation.id,
+        sender_type: 'user',
+        content: input.content,
+        priority: input.priority,
+        status: 'delivered',
+        cost_cents: 0,
+        processed_at: new Date(),
+      })
+      .returning([
+        'id',
+        'conversation_id as conversationId',
+        'content',
+        'sender_type as senderType',
+        'created_at as timestamp',
+        'priority',
+        'status',
+        'cost_cents as cost',
+      ])
+      .executeTakeFirstOrThrow();
+
+    const conversation = await trx
+      .updateTable('conversations')
+      .set((eb) => ({
+        last_message_content: input.content,
+        last_message_at: message.timestamp,
+        unread_count: eb('unread_count', '+', 1),
+        updated_at: message.timestamp,
+      }))
+      .where('id', '=', targetConversation.id)
+      .returning([
+        'client_id as clientId',
+        'id as conversationId',
+        'last_message_content as lastMessageContent',
+        'last_message_at as lastMessageAt',
+        'unread_count as unreadCount',
+      ])
+      .executeTakeFirstOrThrow();
+
+    return {
+      clientId: sourceConversation.recipientClientId,
+      message,
+      conversation,
+    };
+  }
+
+  private async findOrCreateAccountRecipient(
+    trx: Transaction<Database>,
+    clientId: string,
+  ): Promise<{ readonly id: string }> {
+    const existing = await trx
+      .selectFrom('recipients')
+      .select(['id'])
+      .where('client_profile_id', '=', clientId)
+      .executeTakeFirst();
+
+    if (existing) {
+      return existing;
+    }
+
+    const profile = await trx
+      .selectFrom('client_profiles')
+      .select(['name'])
+      .where('id', '=', clientId)
+      .where('onboarding_completed', '=', true)
+      .executeTakeFirstOrThrow();
+
+    return trx
+      .insertInto('recipients')
+      .values({
+        name: profile.name,
+        client_profile_id: clientId,
+      })
+      .returning(['id'])
+      .executeTakeFirstOrThrow();
   }
 }

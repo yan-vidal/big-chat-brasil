@@ -38,6 +38,17 @@ export type SimulatorResponseResult = {
 export class SimulatorRepository {
   constructor(private readonly database: DatabaseService) {}
 
+  async conversationUsesSimulatedRecipient(conversationId: string): Promise<boolean> {
+    const conversation = await this.database.db
+      .selectFrom('conversations')
+      .innerJoin('recipients', 'recipients.id', 'conversations.recipient_id')
+      .select(['recipients.client_profile_id as linkedClientId'])
+      .where('conversations.id', '=', conversationId)
+      .executeTakeFirst();
+
+    return conversation?.linkedClientId === null;
+  }
+
   async markDeliveredClientMessagesRead(
     conversationId: string,
   ): Promise<readonly SimulatorStatusRow[]> {

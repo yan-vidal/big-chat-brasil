@@ -27,6 +27,13 @@ type RecipientListItem = {
   readonly name: string;
 };
 
+type MessageListItem = {
+  readonly content: string;
+  readonly senderType: 'client' | 'user';
+  readonly cost: number;
+  readonly status: string;
+};
+
 describeDatabase('messages HTTP API', () => {
   let app: INestApplication;
   let db: Kysely<Database>;
@@ -160,6 +167,111 @@ describeDatabase('messages HTTP API', () => {
         expect.objectContaining({
           recipientName: 'Ana Costa',
           lastMessageContent: 'Olá, Ana. Podemos começar uma conversa?',
+        }),
+      ]),
+    );
+  });
+
+  it('mirrors messages between two real account recipients', async () => {
+    const empresa = await createSession('11222333000181', 'CNPJ');
+    const postpaid = await createSession('11444777000161', 'CNPJ');
+    const empresaRecipients = await request(server)
+      .get('/recipients')
+      .set('Authorization', `Bearer ${empresa.token}`)
+      .expect(200);
+    const postpaidRecipient = (empresaRecipients.body as RecipientListItem[]).find(
+      (recipient) => recipient.name === 'Cliente Pós-pago Com Limite',
+    );
+
+    expect(postpaidRecipient).toBeDefined();
+
+    await request(server)
+      .post('/messages')
+      .set('Authorization', `Bearer ${empresa.token}`)
+      .send({
+        recipientId: postpaidRecipient?.id,
+        content: 'Olá, podemos conversar entre contas reais?',
+        priority: 'normal',
+      })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body).toMatchObject({ status: 'queued', cost: 25, currentBalance: 2475 });
+      });
+
+    const postpaidConversations = await request(server)
+      .get('/conversations')
+      .set('Authorization', `Bearer ${postpaid.token}`)
+      .expect(200);
+    const empresaConversation = (postpaidConversations.body as ConversationListItem[]).find(
+      (conversation) => conversation.recipientName === 'Empresa ABC',
+    );
+
+    expect(empresaConversation).toMatchObject({
+      recipientName: 'Empresa ABC',
+      lastMessageContent: 'Olá, podemos conversar entre contas reais?',
+      unreadCount: 1,
+    });
+
+    const postpaidMessages = await request(server)
+      .get(`/conversations/${empresaConversation?.id}/messages`)
+      .set('Authorization', `Bearer ${postpaid.token}`)
+      .expect(200);
+
+    expect(postpaidMessages.body as MessageListItem[]).toEqual([
+      expect.objectContaining({
+        content: 'Olá, podemos conversar entre contas reais?',
+        senderType: 'user',
+        cost: 0,
+        status: 'delivered',
+      }),
+    ]);
+
+    await request(server)
+      .post('/messages')
+      .set('Authorization', `Bearer ${postpaid.token}`)
+      .send({
+        conversationId: empresaConversation?.id,
+        content: 'Podemos sim, recebi por aqui.',
+        priority: 'urgent',
+      })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body).toMatchObject({
+          status: 'queued',
+          cost: 50,
+        });
+      });
+
+    const empresaConversations = await request(server)
+      .get('/conversations')
+      .set('Authorization', `Bearer ${empresa.token}`)
+      .expect(200);
+    const postpaidConversationForEmpresa = (
+      empresaConversations.body as ConversationListItem[]
+    ).find((conversation) => conversation.recipientName === 'Cliente Pós-pago Com Limite');
+
+    expect(postpaidConversationForEmpresa).toMatchObject({
+      lastMessageContent: 'Podemos sim, recebi por aqui.',
+      unreadCount: 1,
+    });
+
+    const empresaMessages = await request(server)
+      .get(`/conversations/${postpaidConversationForEmpresa?.id}/messages`)
+      .set('Authorization', `Bearer ${empresa.token}`)
+      .expect(200);
+
+    expect(empresaMessages.body as MessageListItem[]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          content: 'Olá, podemos conversar entre contas reais?',
+          senderType: 'client',
+          cost: 25,
+        }),
+        expect.objectContaining({
+          content: 'Podemos sim, recebi por aqui.',
+          senderType: 'user',
+          cost: 0,
+          status: 'delivered',
         }),
       ]),
     );

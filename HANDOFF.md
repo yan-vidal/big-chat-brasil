@@ -180,6 +180,20 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - Verificação Docker: `docker compose build` passou; `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate db api worker web` subiu API healthy e worker; logs confirmaram `Queue processor disabled for this process` no API e `Queue worker started`/`Recovered 1 pending messages` no worker.
   - E2E full-stack passou contra Docker com worker separado: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack` (1 teste).
   - Armadilha nova: se a stack Docker estiver rodando, pare `api/worker/web` antes de `pnpm --filter @bcb/api test:db`; o worker usa o mesmo Postgres local e pode avançar mensagens que testes esperam controlar manualmente. Com `docker compose stop api worker web`, `test:db` passou 16 suites/49 testes.
+- **Comunicação entre contas reais implementada**:
+  - Plano detalhado: `docs/superpowers/plans/2026-06-10-account-to-account-chat.md`.
+  - `recipients` virou catálogo unificado: rows sem `client_profile_id` continuam sendo recipients simulados; rows com `client_profile_id` representam contas reais logáveis/onboarded.
+  - Nova migration `002_account_recipients` adiciona `recipients.client_profile_id`, remove a unicidade rígida de `name` e cria índice único por `client_profile_id`. A migration `001` foi mantida histórica; não duplicar a coluna nela.
+  - Seed cria recipients para as contas demo onboarded e mantém os quatro simulados (`Maria Oliveira`, `Carlos Pereira`, `Ana Costa`, `Pedro Santos`).
+  - `/recipients` agora recebe o `clientId` autenticado: lista simulados + outras contas ativas/onboarded, excluindo a própria conta.
+  - `BillingRepository` faz upsert do recipient da conta quando onboarding fica completo: pós-pago no onboarding, pré-pago na confirmação PIX.
+  - `MessagesRepository.createClientMessage()` agora cria a mensagem do remetente e, se o recipient for uma conta real, cria conversa/mensagem espelhada no inbox do destinatário (`senderType='user'`, custo zero, `delivered`, `unreadCount + 1`). O remetente continua sendo cobrado e sua mensagem continua entrando na fila.
+  - `SimulatorService` consulta se o recipient é simulado; recipients de conta real não geram resposta automática.
+  - TDD observado: `recipients.spec.ts`, `messages.spec.ts` e `simulator.spec.ts` falharam primeiro porque recipients de contas ainda não existiam; depois passaram 3 suites/11 testes.
+  - E2E full-stack foi ampliado para logar como Empresa ABC, iniciar conversa com `Cliente Pós-pago Com Limite`, trocar sessão e validar a mensagem logando como a segunda conta.
+  - Depuração observada: a suíte DB completa expôs um teste de seed ainda contando apenas recipients simulados; ele foi corrigido para validar simulados e recipients de contas separadamente. O full-stack novo também pegou um seletor de botão desatualizado (`Enviar mensagem` vs. `Enviar nova conversa`) e foi corrigido pelo snapshot do Playwright.
+  - Gates finais verdes: `pnpm build`, `docker compose stop api worker web`, `pnpm --filter @bcb/api test:db` (16 suites/52 testes), `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (11 testes), `pnpm format:check`, `docker compose config`, `docker compose build`, `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate db api worker web`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack` (2 testes).
+  - Estado operacional ao fechar o bloco: stack Docker ficou rodando para demo local, com API em `localhost:3002`, web em `localhost:4200`, DB healthy em `5432` e worker ativo; logs recentes mostram `Queue processor disabled for this process` na API e `Queue worker started` no worker.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -194,9 +208,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Se o bloco do worker separado ainda não tiver sido commitado, revisar o diff e criar um commit pequeno, sugerido `feat(api): add separate queue worker`.
-3. Com worker commitado, fazer uma revisão final de entrega: checar README do ponto de vista do avaliador, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
-4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado e o worker separado foi tratado como melhoria técnica alinhada ao desafio.
+2. Confirmar se o bloco de comunicação entre contas reais aparece no log como `feat(chat): allow account to account conversations`; se não aparecer, revisar o diff e commitar esse bloco antes de seguir.
+3. Fazer uma revisão final de entrega: checar README do ponto de vista do avaliador, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
+4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado, e worker separado + conversa entre contas reais foram tratados como melhorias técnicas/demonstração.
 
 ## Skills sugeridas para o próximo agente
 
@@ -239,6 +253,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - O e2e full-stack deve rodar pelo script/config dedicado (`pnpm test:e2e:fullstack`); não colocar `full-stack.spec.ts` de volta na suíte mockada padrão.
 - Nesta máquina, a porta host `3000` estava ocupada pelo container externo `pokedex_api`; a validação Docker local usa `API_PUBLISHED_PORT=3002`. Depois do hotfix, não use mais `E2E_API_BASE_URL` nem console do navegador para esse caso.
 - Ao rodar `pnpm --filter @bcb/api test:db`, não deixe `big-chat-brasil-irrah-worker-1` ativo contra o mesmo Postgres; use `docker compose stop api worker web` e mantenha só `db` se precisar da conexão local.
+- A migration `002_account_recipients` depende de `001_initial_schema`; em banco limpo, não adicione `client_profile_id` na `001`, senão `migrateToLatest()` tentará criar a coluna duas vezes.
+- Para recipients reais, não ativar o simulador: ele deve responder apenas quando `recipients.client_profile_id is null`.
 - Logs de navegador com `console-log.service.ts`, `background.js`, `Fido2Client`, `SignalR`, `triggerAutofillScriptInjection` e chamadas para `hidden42gate.yanlucas.com` são de extensão do browser/perfil local, não do BCB. Testar em perfil limpo/incógnito com extensões desativadas remove esse ruído.
 - Ao adicionar/alterar endpoint REST, atualizar `OPENAPI_OPERATIONS` e `OPENAPI_SCHEMAS`; `pnpm --filter @bcb/api test -- openapi.spec.ts` deve falhar se a documentação não acompanhar a rota.
 

@@ -21,6 +21,7 @@ import {
   MessagesRepository,
   type ConversationUpdateRow,
   type ConversationReference,
+  type MirroredMessageResult,
   type MessageRow,
 } from './messages.repository.js';
 
@@ -42,14 +43,17 @@ export class MessagesService {
     });
 
     try {
-      const message = await this.messagesRepository.createClientMessage({
+      const result = await this.messagesRepository.createClientMessage({
+        clientId,
         conversationId: conversation.id,
         content: request.content,
         priority: request.priority,
         costCents: charge.chargedCents,
       });
+      const message = result.message;
       this.queueService.enqueue({ messageId: message.id, priority: message.priority });
       await this.publishMessageEvents(clientId, message);
+      this.publishMirroredMessage(result.mirror);
 
       return SendMessageResponseSchema.parse({
         id: message.id,
@@ -141,6 +145,20 @@ export class MessagesService {
         this.toConversationUpdatedPayload(conversation),
       );
     }
+  }
+
+  private publishMirroredMessage(mirror: MirroredMessageResult | undefined): void {
+    if (!mirror) {
+      return;
+    }
+
+    this.realtimePublisher.publishMessageCreated(mirror.clientId, {
+      message: this.toMessageResponse(mirror.message),
+    });
+    this.realtimePublisher.publishConversationUpdated(
+      mirror.clientId,
+      this.toConversationUpdatedPayload(mirror.conversation),
+    );
   }
 
   private toConversationUpdatedPayload(conversation: ConversationUpdateRow): {

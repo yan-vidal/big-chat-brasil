@@ -25,6 +25,11 @@ type ConversationListItem = {
   readonly recipientName: string;
 };
 
+type RecipientListItem = {
+  readonly id: string;
+  readonly name: string;
+};
+
 describeDatabase('recipient simulator', () => {
   let app: INestApplication;
   let db: Kysely<Database>;
@@ -69,10 +74,13 @@ describeDatabase('recipient simulator', () => {
     realtimePublisher = app.get(RealtimePublisher);
   }
 
-  async function createSession(): Promise<SessionResponse> {
+  async function createSession(
+    documentId = '11222333000181',
+    documentType: 'CPF' | 'CNPJ' = 'CNPJ',
+  ): Promise<SessionResponse> {
     const response = await request(server)
       .post('/auth/session')
-      .send({ documentId: '11222333000181', documentType: 'CNPJ', password: 'Demo@123' })
+      .send({ documentId, documentType, password: 'Demo@123' })
       .expect(201);
 
     return response.body as SessionResponse;
@@ -214,5 +222,46 @@ describeDatabase('recipient simulator', () => {
       expect.arrayContaining([expect.objectContaining({ name: 'typing.started' })]),
     );
     subscription.unsubscribe();
+  });
+
+  it('does not create simulated responses for account-backed recipients', async () => {
+    await initApp(true);
+    const empresa = await createSession();
+    await createSession('11444777000161', 'CNPJ');
+    const recipients = await request(server)
+      .get('/recipients')
+      .set('Authorization', `Bearer ${empresa.token}`)
+      .expect(200);
+    const postpaidRecipient = (recipients.body as RecipientListItem[]).find(
+      (recipient) => recipient.name === 'Cliente Pós-pago Com Limite',
+    );
+
+    expect(postpaidRecipient).toBeDefined();
+
+    const sent = await request(server)
+      .post('/messages')
+      .set('Authorization', `Bearer ${empresa.token}`)
+      .send({
+        recipientId: postpaidRecipient?.id,
+        content: 'Mensagem para conta real nao deve gerar bot.',
+        priority: 'normal',
+      })
+      .expect(201);
+    await queueService.processNextForTests();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const senderConversation = await db
+      .selectFrom('messages')
+      .select(['conversation_id as conversationId'])
+      .where('id', '=', sent.body.id as string)
+      .executeTakeFirstOrThrow();
+    const simulatedResponse = await db
+      .selectFrom('messages')
+      .select(['id'])
+      .where('conversation_id', '=', senderConversation.conversationId)
+      .where('sender_type', '=', 'user')
+      .executeTakeFirst();
+
+    expect(simulatedResponse).toBeUndefined();
   });
 });

@@ -54,8 +54,9 @@ Também é possível entrar com um CPF/CNPJ válido novo e senha qualquer. A con
 - Login por documento e senha, com validação de CPF/CNPJ.
 - Auto-registro de novo cliente.
 - Onboarding pré-pago com PIX simulado e pós-pago com limite mensal.
-- Listagem de conversas, busca, badges de não lidas e criação de nova conversa.
+- Listagem de conversas, busca, badges de não lidas e criação de nova conversa com recipients simulados ou contas reais.
 - Tela de conversa com histórico, bolhas, status, prioridade normal/urgente e composer.
+- Conversa real entre contas CPF/CNPJ onboarded: a mensagem aparece no inbox do destinatário logado e pode receber resposta pela mesma tela.
 - Cobrança por mensagem: normal `R$0,25`, urgente `R$0,50`.
 - Fila processada por worker separado, com prioridade urgente, anti-starvation, polling do banco e recuperação de mensagens pendentes.
 - Socket.IO autenticado para status, novas mensagens, atualização de conversa e digitação.
@@ -145,6 +146,7 @@ Variáveis principais:
 
 - Kysely foi escolhido para manter SQL explícito e controle de transações.
 - Dinheiro é sempre armazenado em centavos inteiros.
+- `recipients` é o catálogo unificado: rows sem `client_profile_id` são contatos simulados; rows com `client_profile_id` representam contas reais logáveis.
 - A fila usa estruturas em memória dentro do worker, mas a fonte de verdade é o PostgreSQL; mensagens `queued`/`processing` são recuperadas no boot e por polling.
 - O reset mensal pós-pago é preguiçoso, feito no uso.
 - O seed roda no start da API em Docker para privilegiar demonstração reprodutível. Reiniciar a API reseta os dados demo.

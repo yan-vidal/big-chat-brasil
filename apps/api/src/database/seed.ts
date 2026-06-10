@@ -50,6 +50,16 @@ async function seedAccount(db: Kysely<Database>, account: DemoAccount): Promise<
     .returning(['id'])
     .executeTakeFirstOrThrow();
 
+  if (account.profile.onboardingCompleted) {
+    await db
+      .insertInto('recipients')
+      .values({
+        name: account.profile.name,
+        client_profile_id: insertedProfile.id,
+      })
+      .execute();
+  }
+
   if (account.documentId === '11222333000181') {
     const paymentIntent = await db
       .insertInto('payment_intents')
@@ -91,7 +101,7 @@ export async function seedDatabase(db: Kysely<Database>): Promise<void> {
   for (const recipient of DEMO_RECIPIENTS) {
     const insertedRecipient = await db
       .insertInto('recipients')
-      .values({ name: recipient.name })
+      .values({ name: recipient.name, client_profile_id: null })
       .returning(['id'])
       .executeTakeFirstOrThrow();
 

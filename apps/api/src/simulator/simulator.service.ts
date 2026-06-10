@@ -53,6 +53,14 @@ export class SimulatorService implements OnModuleInit, OnModuleDestroy {
   private async handleDeliveredMessage(
     event: Extract<RealtimeDomainEvent, { name: 'message.status' }>,
   ): Promise<void> {
+    const shouldSimulate = await this.simulatorRepository.conversationUsesSimulatedRecipient(
+      event.payload.conversationId,
+    );
+
+    if (!shouldSimulate) {
+      return;
+    }
+
     await this.delay(this.config.readDelayMs);
 
     const readMessages = await this.simulatorRepository.markDeliveredClientMessagesRead(

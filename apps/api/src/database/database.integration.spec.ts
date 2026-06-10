@@ -58,9 +58,15 @@ describeDatabase('database migrations and seed', () => {
       .selectFrom('accounts')
       .select((eb) => eb.fn.countAll<number>().as('count'))
       .executeTakeFirstOrThrow();
-    const recipientCount = await db
+    const simulatedRecipientCount = await db
       .selectFrom('recipients')
       .select((eb) => eb.fn.countAll<number>().as('count'))
+      .where('client_profile_id', 'is', null)
+      .executeTakeFirstOrThrow();
+    const accountRecipientCount = await db
+      .selectFrom('recipients')
+      .select((eb) => eb.fn.countAll<number>().as('count'))
+      .where('client_profile_id', 'is not', null)
       .executeTakeFirstOrThrow();
     const empresaAbc = await db
       .selectFrom('accounts')
@@ -83,7 +89,10 @@ describeDatabase('database migrations and seed', () => {
       .executeTakeFirstOrThrow();
 
     expect(Number(accountCount.count)).toBe(DEMO_ACCOUNTS.length);
-    expect(Number(recipientCount.count)).toBe(DEMO_RECIPIENTS.length);
+    expect(Number(simulatedRecipientCount.count)).toBe(DEMO_RECIPIENTS.length);
+    expect(Number(accountRecipientCount.count)).toBe(
+      DEMO_ACCOUNTS.filter((account) => account.profile.onboardingCompleted).length,
+    );
     expect(empresaAbc).toEqual({
       documentId: '11222333000181',
       role: 'client',
