@@ -226,6 +226,14 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - Gates verdes: `pnpm --filter @bcb/web build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/billing.spec.ts` (2 testes), `pnpm lint`, `pnpm test`, `pnpm format:check`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (17 testes).
   - Docker local atualizado: `docker compose build web` e `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; checagem Playwright contra `localhost:4200/billing` com conta demo real confirmou `placeholder=0`, 3 linhas de histórico e captura `/tmp/bcb-billing-docker.png` sem sobreposição óbvia.
   - Estado operacional ao fechar o hotfix: stack Docker segue rodando para demo local com API em `localhost:3002`, web em `localhost:4200`, DB healthy e worker ativo.
+- **Hotfix web - esconder Acesso e adicionar logout com sessão ativa**:
+  - Pedido do Yan: depois de logado, a aba `Acesso` não deve continuar visível e o shell deve expor um botão de logout.
+  - `apps/web/src/app/app.component.ts` agora renderiza o link `Acesso` apenas quando `SessionStore.authenticated()` é falso e renderiza `Sair` quando existe sessão ativa.
+  - O botão `Sair` chama `SessionStore.clear()`, remove `bcb.session` do `localStorage` e navega para `/login`.
+  - Textos `pt-BR`/`en-US` receberam `nav.logout`.
+  - `apps/web/e2e/shell.spec.ts` ganhou o teste `hides access navigation after login and logs out from the shell`; ele falhou primeiro porque `Acesso` ainda estava visível, depois passou após a implementação.
+  - Gates verdes: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/shell.spec.ts` (5 testes), `pnpm --filter @bcb/web build`, `pnpm lint`, `pnpm test`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (18 testes).
+  - Docker local atualizado após o commit inicial: `docker compose build web` e `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; validação focada contra `localhost:4200` passou com uma config Playwright temporária sem `webServer` e essa config foi removida.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -240,7 +248,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Confirmar se o hotfix de cobrança aparece no log como `fix(web): connect billing page`; se não aparecer, revisar o diff deste bloco e commitar antes de seguir.
+2. Confirmar se o hotfix de logout aparece no log como `fix(web): add authenticated logout`; se não aparecer, revisar o diff deste bloco e commitar antes de seguir.
 3. Fazer uma revisão final de entrega: checar README do ponto de vista do avaliador, validar Docker/full-stack em ambiente limpo, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
 4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado, e worker separado, conversa entre contas reais e painel admin foram tratados como melhorias técnicas/demonstração.
 

@@ -11,7 +11,8 @@
     "onboarding": "Onboarding",
     "conversations": "Conversas",
     "billing": "Cobrança",
-    "admin": "Administração"
+    "admin": "Administração",
+    "logout": "Sair"
   },
   "auth": {
     "kicker": "Identificação",

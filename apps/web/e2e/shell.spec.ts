@@ -159,4 +159,34 @@ test.describe('BCB Angular shell', () => {
 
     await expect(page.getByRole('link', { name: 'Onboarding', exact: true })).toBeVisible();
   });
+
+  test('hides access navigation after login and logs out from the shell', async ({ page }) => {
+    await page.route('http://localhost:3000/billing/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          planType: 'prepaid',
+          balanceCents: 2500,
+          transactions: [],
+        }),
+      });
+    });
+
+    await page.goto('/login');
+    await page.evaluate((session) => {
+      localStorage.setItem('bcb.session', session);
+    }, storeSession(true));
+    await page.goto('/billing');
+
+    await expect(page.getByRole('link', { name: 'Acesso', exact: true })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Sair', exact: true })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Sair', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole('link', { name: 'Acesso', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sair', exact: true })).toBeHidden();
+    await expect(page.evaluate(() => localStorage.getItem('bcb.session'))).resolves.toBeNull();
+  });
 });

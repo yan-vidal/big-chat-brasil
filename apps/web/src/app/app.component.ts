@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { SessionStore } from './core/auth/session.store';
 import { PreferencesService, type SupportedLanguage } from './core/preferences/preferences.service';
@@ -60,14 +60,16 @@ import { PreferencesService, type SupportedLanguage } from './core/preferences/p
             class="flex flex-wrap items-start gap-2 border-b border-slate-200 pb-3 text-sm md:flex-nowrap md:flex-col md:items-stretch md:border-b-0 md:border-r md:pb-0 md:pr-4 dark:border-slate-800"
             [attr.aria-label]="'shell.primaryNavigation' | translate"
           >
-            <a
-              class="whitespace-nowrap rounded px-3 py-2 text-slate-700 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800"
-              routerLink="/login"
-              routerLinkActive="bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950"
-              [routerLinkActiveOptions]="{ exact: true }"
-            >
-              {{ 'nav.login' | translate }}
-            </a>
+            @if (!session.authenticated()) {
+              <a
+                class="whitespace-nowrap rounded px-3 py-2 text-slate-700 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800"
+                routerLink="/login"
+                routerLinkActive="bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950"
+                [routerLinkActiveOptions]="{ exact: true }"
+              >
+                {{ 'nav.login' | translate }}
+              </a>
+            }
             @if (session.requiresOnboarding()) {
               <a
                 class="whitespace-nowrap rounded px-3 py-2 text-slate-700 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -103,6 +105,15 @@ import { PreferencesService, type SupportedLanguage } from './core/preferences/p
                 {{ 'nav.admin' | translate }}
               </a>
             }
+            @if (session.authenticated()) {
+              <button
+                type="button"
+                class="whitespace-nowrap rounded px-3 py-2 text-left text-slate-700 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800"
+                (click)="logout()"
+              >
+                {{ 'nav.logout' | translate }}
+              </button>
+            }
           </nav>
 
           <section class="min-w-0">
@@ -116,6 +127,7 @@ import { PreferencesService, type SupportedLanguage } from './core/preferences/p
 export class AppComponent {
   protected readonly preferences = inject(PreferencesService);
   protected readonly session = inject(SessionStore);
+  private readonly router = inject(Router);
 
   protected changeLanguage(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
@@ -123,5 +135,10 @@ export class AppComponent {
     if (value === 'pt-BR' || value === 'en-US') {
       this.preferences.setLanguage(value satisfies SupportedLanguage);
     }
+  }
+
+  protected logout(): void {
+    this.session.clear();
+    void this.router.navigateByUrl('/login');
   }
 }
