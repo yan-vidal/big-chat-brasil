@@ -18,6 +18,10 @@ export const onboardingGuard: CanActivateFn = () => {
     return router.createUrlTree(['/login']);
   }
 
+  if (session.isAdmin()) {
+    return router.createUrlTree(['/admin']);
+  }
+
   return session.onboardingCompleted() ? true : router.createUrlTree(['/onboarding']);
 };
 

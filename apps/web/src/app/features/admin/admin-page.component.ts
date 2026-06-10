@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
   inferDocumentType,
   normalizeDocument,
@@ -14,39 +15,39 @@ import { AdminApiService } from './admin-api.service';
 @Component({
   selector: 'bcb-admin-page',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
   template: `
     <section class="grid gap-4">
       <div class="border-b border-slate-200 pb-4 dark:border-slate-800">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          Administração
+          {{ 'admin.kicker' | translate }}
         </p>
-        <h2 class="mt-2 text-2xl font-semibold">Administração</h2>
+        <h2 class="mt-2 text-2xl font-semibold">{{ 'admin.title' | translate }}</h2>
         <p class="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
-          Gerenciamento operacional de clientes, planos, créditos e limites.
+          {{ 'admin.description' | translate }}
         </p>
       </div>
 
       @if (feedback()) {
         <p class="text-sm font-medium text-emerald-700 dark:text-emerald-300" role="status">
-          {{ feedback() }}
+          {{ feedback()! | translate }}
         </p>
       }
       @if (error()) {
         <p class="text-sm font-medium text-red-700 dark:text-red-300" role="alert">
-          {{ error() }}
+          {{ error()! | translate }}
         </p>
       }
 
       <section class="grid gap-3 rounded border border-slate-200 p-4 dark:border-slate-800">
-        <h3 class="text-base font-semibold">Novo cliente</h3>
+        <h3 class="text-base font-semibold">{{ 'admin.create.title' | translate }}</h3>
         <form
           class="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
           [formGroup]="createForm"
           (ngSubmit)="createClient()"
         >
           <label class="grid gap-1 text-sm font-medium" for="admin-new-document">
-            Documento do novo cliente
+            {{ 'admin.create.documentLabel' | translate }}
             <input
               id="admin-new-document"
               class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
@@ -54,7 +55,7 @@ import { AdminApiService } from './admin-api.service';
             />
           </label>
           <label class="grid gap-1 text-sm font-medium" for="admin-new-name">
-            Nome do novo cliente
+            {{ 'admin.create.nameLabel' | translate }}
             <input
               id="admin-new-name"
               class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
@@ -62,7 +63,7 @@ import { AdminApiService } from './admin-api.service';
             />
           </label>
           <label class="grid gap-1 text-sm font-medium" for="admin-new-password">
-            Senha do novo cliente
+            {{ 'admin.create.passwordLabel' | translate }}
             <input
               id="admin-new-password"
               type="password"
@@ -71,18 +72,18 @@ import { AdminApiService } from './admin-api.service';
             />
           </label>
           <label class="grid gap-1 text-sm font-medium" for="admin-new-plan">
-            Plano
+            {{ 'admin.create.planLabel' | translate }}
             <select
               id="admin-new-plan"
               class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
               formControlName="planType"
             >
-              <option value="prepaid">Pré-pago</option>
-              <option value="postpaid">Pós-pago</option>
+              <option value="prepaid">{{ 'admin.plans.prepaid' | translate }}</option>
+              <option value="postpaid">{{ 'admin.plans.postpaid' | translate }}</option>
             </select>
           </label>
           <label class="grid gap-1 text-sm font-medium" for="admin-initial-balance">
-            Saldo inicial (centavos)
+            {{ 'admin.create.initialBalanceLabel' | translate }}
             <input
               id="admin-initial-balance"
               type="number"
@@ -92,7 +93,7 @@ import { AdminApiService } from './admin-api.service';
             />
           </label>
           <label class="grid gap-1 text-sm font-medium" for="admin-initial-limit">
-            Limite mensal inicial (centavos)
+            {{ 'admin.create.monthlyLimitLabel' | translate }}
             <input
               id="admin-initial-limit"
               type="number"
@@ -106,18 +107,18 @@ import { AdminApiService } from './admin-api.service';
               type="submit"
               class="h-10 rounded bg-slate-900 px-4 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-950"
             >
-              Criar cliente
+              {{ 'admin.create.submit' | translate }}
             </button>
           </div>
         </form>
       </section>
 
       <section class="grid gap-3 rounded border border-slate-200 p-4 dark:border-slate-800">
-        <h3 class="text-base font-semibold">Ações rápidas</h3>
+        <h3 class="text-base font-semibold">{{ 'admin.quickActions.title' | translate }}</h3>
         <div class="grid gap-3 md:grid-cols-3">
           <form class="grid gap-2" [formGroup]="creditForm" (ngSubmit)="addCredit()">
             <label class="grid gap-1 text-sm font-medium" for="admin-credit-client">
-              Cliente pré-pago
+              {{ 'admin.credit.clientLabel' | translate }}
               <select
                 id="admin-credit-client"
                 class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
@@ -129,7 +130,7 @@ import { AdminApiService } from './admin-api.service';
               </select>
             </label>
             <label class="grid gap-1 text-sm font-medium" for="admin-credit">
-              Crédito pré-pago (centavos)
+              {{ 'admin.credit.amountLabel' | translate }}
               <input
                 id="admin-credit"
                 type="number"
@@ -142,13 +143,13 @@ import { AdminApiService } from './admin-api.service';
               type="submit"
               class="h-10 w-fit rounded bg-slate-900 px-4 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-950"
             >
-              Adicionar crédito
+              {{ 'admin.credit.submit' | translate }}
             </button>
           </form>
 
           <form class="grid gap-2" [formGroup]="limitForm" (ngSubmit)="updateLimit()">
             <label class="grid gap-1 text-sm font-medium" for="admin-limit-client">
-              Cliente pós-pago
+              {{ 'admin.limit.clientLabel' | translate }}
               <select
                 id="admin-limit-client"
                 class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
@@ -160,7 +161,7 @@ import { AdminApiService } from './admin-api.service';
               </select>
             </label>
             <label class="grid gap-1 text-sm font-medium" for="admin-limit">
-              Novo limite pós-pago (centavos)
+              {{ 'admin.limit.amountLabel' | translate }}
               <input
                 id="admin-limit"
                 type="number"
@@ -173,13 +174,13 @@ import { AdminApiService } from './admin-api.service';
               type="submit"
               class="h-10 w-fit rounded bg-slate-900 px-4 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-950"
             >
-              Atualizar limite
+              {{ 'admin.limit.submit' | translate }}
             </button>
           </form>
 
           <form class="grid gap-2" [formGroup]="convertForm" (ngSubmit)="convertPlan()">
             <label class="grid gap-1 text-sm font-medium" for="admin-convert-client">
-              Cliente para converter
+              {{ 'admin.convert.clientLabel' | translate }}
               <select
                 id="admin-convert-client"
                 class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
@@ -191,41 +192,44 @@ import { AdminApiService } from './admin-api.service';
               </select>
             </label>
             <label class="grid gap-1 text-sm font-medium" for="admin-convert-plan">
-              Novo plano
+              {{ 'admin.convert.planLabel' | translate }}
               <select
                 id="admin-convert-plan"
                 class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
                 formControlName="planType"
               >
-                <option value="prepaid">Pré-pago</option>
-                <option value="postpaid">Pós-pago</option>
+                <option value="prepaid">{{ 'admin.plans.prepaid' | translate }}</option>
+                <option value="postpaid">{{ 'admin.plans.postpaid' | translate }}</option>
               </select>
             </label>
-            <label class="grid gap-1 text-sm font-medium" for="admin-convert-balance">
-              Saldo ao converter para pré-pago (centavos)
-              <input
-                id="admin-convert-balance"
-                type="number"
-                min="0"
-                class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
-                formControlName="initialBalanceCents"
-              />
-            </label>
-            <label class="grid gap-1 text-sm font-medium" for="admin-convert-limit">
-              Limite mensal ao converter para pós-pago (centavos)
-              <input
-                id="admin-convert-limit"
-                type="number"
-                min="1"
-                class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
-                formControlName="monthlyLimitCents"
-              />
-            </label>
+            @if (convertForm.controls.planType.value === 'prepaid') {
+              <label class="grid gap-1 text-sm font-medium" for="admin-convert-balance">
+                {{ 'admin.convert.balanceLabel' | translate }}
+                <input
+                  id="admin-convert-balance"
+                  type="number"
+                  min="0"
+                  class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
+                  formControlName="initialBalanceCents"
+                />
+              </label>
+            } @else {
+              <label class="grid gap-1 text-sm font-medium" for="admin-convert-limit">
+                {{ 'admin.convert.limitLabel' | translate }}
+                <input
+                  id="admin-convert-limit"
+                  type="number"
+                  min="1"
+                  class="h-10 rounded border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
+                  formControlName="monthlyLimitCents"
+                />
+              </label>
+            }
             <button
               type="submit"
               class="h-10 w-fit rounded bg-slate-900 px-4 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-950"
             >
-              Converter plano
+              {{ 'admin.convert.submit' | translate }}
             </button>
           </form>
         </div>
@@ -237,13 +241,13 @@ import { AdminApiService } from './admin-api.service';
             class="bg-slate-100 text-xs uppercase text-slate-600 dark:bg-slate-900 dark:text-slate-300"
           >
             <tr>
-              <th class="px-3 py-2">Nome</th>
-              <th class="px-3 py-2">Documento</th>
-              <th class="px-3 py-2">Role</th>
-              <th class="px-3 py-2">Plano</th>
-              <th class="px-3 py-2">Status</th>
-              <th class="px-3 py-2">Financeiro</th>
-              <th class="px-3 py-2">Ações</th>
+              <th class="px-3 py-2">{{ 'admin.table.name' | translate }}</th>
+              <th class="px-3 py-2">{{ 'admin.table.document' | translate }}</th>
+              <th class="px-3 py-2">{{ 'admin.table.role' | translate }}</th>
+              <th class="px-3 py-2">{{ 'admin.table.plan' | translate }}</th>
+              <th class="px-3 py-2">{{ 'admin.table.status' | translate }}</th>
+              <th class="px-3 py-2">{{ 'admin.table.financial' | translate }}</th>
+              <th class="px-3 py-2">{{ 'admin.table.actions' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -257,9 +261,13 @@ import { AdminApiService } from './admin-api.service';
               >
                 <td class="px-3 py-2 font-medium">{{ client.name }}</td>
                 <td class="px-3 py-2">{{ client.documentId }}</td>
-                <td class="px-3 py-2">{{ client.role }}</td>
-                <td class="px-3 py-2">{{ client.planType }}</td>
-                <td class="px-3 py-2">{{ client.active ? 'Ativo' : 'Inativo' }}</td>
+                <td class="px-3 py-2">{{ roleLabel(client.role) }}</td>
+                <td class="px-3 py-2">{{ planLabel(client.planType) }}</td>
+                <td class="px-3 py-2">
+                  {{
+                    (client.active ? 'admin.status.active' : 'admin.status.inactive') | translate
+                  }}
+                </td>
                 <td class="px-3 py-2">{{ financialLabel(client) }}</td>
                 <td class="px-3 py-2">
                   @if (client.role === 'client') {
@@ -268,10 +276,15 @@ import { AdminApiService } from './admin-api.service';
                       class="h-9 rounded border border-slate-300 px-3 text-sm font-medium dark:border-slate-700"
                       (click)="updateStatus(client)"
                     >
-                      {{ client.active ? 'Inativar' : 'Ativar' }}
+                      {{
+                        (client.active ? 'admin.actions.deactivate' : 'admin.actions.activate')
+                          | translate
+                      }}
                     </button>
                   } @else {
-                    <span class="text-xs text-slate-500 dark:text-slate-400">Somente leitura</span>
+                    <span class="text-xs text-slate-500 dark:text-slate-400">
+                      {{ 'admin.actions.readOnly' | translate }}
+                    </span>
                   }
                 </td>
               </tr>
@@ -286,6 +299,7 @@ export class AdminPageComponent implements OnInit {
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly adminApi = inject(AdminApiService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly translate = inject(TranslateService);
 
   protected readonly clients = signal<readonly AdminClientResponse[]>([]);
   protected readonly feedback = signal<string | null>(null);
@@ -356,9 +370,9 @@ export class AdminPageComponent implements OnInit {
       this.replaceClient(client);
       this.resetCreateForm();
       this.highlightAndScrollToClient(client.id);
-      this.feedback.set('Cliente criado');
+      this.feedback.set('admin.feedback.clientCreated');
     } catch {
-      this.error.set('Não foi possível criar o cliente');
+      this.error.set('admin.errors.createFailed');
     }
   }
 
@@ -367,7 +381,7 @@ export class AdminPageComponent implements OnInit {
     const clientId = this.creditForm.controls.clientId.value;
 
     if (!clientId) {
-      this.error.set('Nenhum cliente pré-pago disponível');
+      this.error.set('admin.errors.noPrepaidClient');
       return;
     }
 
@@ -378,9 +392,9 @@ export class AdminPageComponent implements OnInit {
         }),
       );
       this.replaceClient(updated);
-      this.feedback.set('Crédito adicionado');
+      this.feedback.set('admin.feedback.creditAdded');
     } catch {
-      this.error.set('Não foi possível adicionar crédito');
+      this.error.set('admin.errors.creditFailed');
     }
   }
 
@@ -389,7 +403,7 @@ export class AdminPageComponent implements OnInit {
     const clientId = this.limitForm.controls.clientId.value;
 
     if (!clientId) {
-      this.error.set('Nenhum cliente pós-pago disponível');
+      this.error.set('admin.errors.noPostpaidClient');
       return;
     }
 
@@ -400,9 +414,9 @@ export class AdminPageComponent implements OnInit {
         }),
       );
       this.replaceClient(updated);
-      this.feedback.set('Limite atualizado');
+      this.feedback.set('admin.feedback.limitUpdated');
     } catch {
-      this.error.set('Não foi possível atualizar limite');
+      this.error.set('admin.errors.limitFailed');
     }
   }
 
@@ -414,9 +428,9 @@ export class AdminPageComponent implements OnInit {
         this.adminApi.updateStatus(client.id, { active: !client.active }),
       );
       this.replaceClient(updated);
-      this.feedback.set('Status atualizado');
+      this.feedback.set('admin.feedback.statusUpdated');
     } catch {
-      this.error.set('Não foi possível atualizar status');
+      this.error.set('admin.errors.statusFailed');
     }
   }
 
@@ -425,7 +439,7 @@ export class AdminPageComponent implements OnInit {
     const clientId = this.convertForm.controls.clientId.value;
 
     if (!clientId) {
-      this.error.set('Nenhum cliente disponível para conversão');
+      this.error.set('admin.errors.noConvertibleClient');
       return;
     }
 
@@ -444,18 +458,31 @@ export class AdminPageComponent implements OnInit {
     try {
       const updated = await firstValueFrom(this.adminApi.convertPlan(clientId, request));
       this.replaceClient(updated);
-      this.feedback.set('Plano convertido');
+      this.feedback.set('admin.feedback.planConverted');
     } catch {
-      this.error.set('Não foi possível converter plano');
+      this.error.set('admin.errors.convertFailed');
     }
   }
 
   protected financialLabel(client: AdminClientResponse): string {
     if (client.planType === 'prepaid') {
-      return `Saldo ${this.formatMoney(client.balanceCents)}`;
+      return this.translate.instant('admin.financial.balance', {
+        amount: this.formatMoney(client.balanceCents),
+      }) as string;
     }
 
-    return `Limite ${this.formatMoney(client.monthlyLimitCents ?? 0)} · Usado ${this.formatMoney(client.monthlyUsedCents)}`;
+    return this.translate.instant('admin.financial.limitUsage', {
+      limit: this.formatMoney(client.monthlyLimitCents ?? 0),
+      used: this.formatMoney(client.monthlyUsedCents),
+    }) as string;
+  }
+
+  protected planLabel(planType: PlanType): string {
+    return this.translate.instant(`admin.plans.${planType}`) as string;
+  }
+
+  protected roleLabel(role: AdminClientResponse['role']): string {
+    return this.translate.instant(`admin.roles.${role}`) as string;
   }
 
   private async loadClients(): Promise<void> {
@@ -463,7 +490,7 @@ export class AdminPageComponent implements OnInit {
       this.clients.set(await firstValueFrom(this.adminApi.listClients()));
       this.syncActionDefaults();
     } catch {
-      this.error.set('Não foi possível carregar clientes');
+      this.error.set('admin.errors.loadFailed');
     }
   }
 
@@ -504,7 +531,7 @@ export class AdminPageComponent implements OnInit {
   }
 
   private formatMoney(value: number): string {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat(this.translate.currentLang() ?? 'pt-BR', {
       style: 'currency',
       currency: 'BRL',
     }).format(value / 100);

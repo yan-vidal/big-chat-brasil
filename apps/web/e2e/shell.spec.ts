@@ -22,6 +22,25 @@ function storeSession(onboardingCompleted: boolean): string {
   });
 }
 
+function storeAdminSession(): string {
+  return JSON.stringify({
+    token: 'admin-token',
+    requiresOnboarding: false,
+    client: {
+      id: '550e8400-e29b-41d4-a716-4466554400aa',
+      name: 'Administrador BCB',
+      documentId: '00000000000',
+      documentType: 'CPF',
+      role: 'admin',
+      planType: 'prepaid',
+      active: true,
+      onboardingCompleted: true,
+      balanceCents: 0,
+      monthlyUsedCents: 0,
+    },
+  });
+}
+
 test.describe('BCB Angular shell', () => {
   test('renders route navigation on the login page', async ({ page }, testInfo) => {
     await page.goto('/login');
@@ -198,5 +217,33 @@ test.describe('BCB Angular shell', () => {
     await expect(page.getByRole('link', { name: 'Cobrança', exact: true })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Sair', exact: true })).toBeHidden();
     await expect(page.evaluate(() => localStorage.getItem('bcb.session'))).resolves.toBeNull();
+  });
+
+  test('hides client navigation for admin sessions', async ({ page }) => {
+    await page.route('http://localhost:3000/admin/clients', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '[]',
+      });
+    });
+    await page.goto('/login');
+    await page.evaluate((session) => {
+      localStorage.setItem('bcb.session', session);
+    }, storeAdminSession());
+    await page.goto('/login');
+
+    await expect(page.getByRole('link', { name: 'Conversas', exact: true })).toBeHidden();
+    await expect(page.getByRole('link', { name: 'Cobrança', exact: true })).toBeHidden();
+    await expect(page.getByRole('link', { name: 'Administração', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sair', exact: true })).toBeVisible();
+
+    await page.goto('/conversations');
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.getByRole('heading', { name: 'Administração' })).toBeVisible();
+
+    await page.goto('/billing');
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.getByRole('heading', { name: 'Administração' })).toBeVisible();
   });
 });

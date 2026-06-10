@@ -14,6 +14,89 @@
     "admin": "Administration",
     "logout": "Sign out"
   },
+  "admin": {
+    "kicker": "Administration",
+    "title": "Administration",
+    "description": "Operational management of clients, plans, credits and limits.",
+    "create": {
+      "title": "New client",
+      "documentLabel": "New client document",
+      "nameLabel": "New client name",
+      "passwordLabel": "New client password",
+      "planLabel": "Plan",
+      "initialBalanceLabel": "Initial balance (cents)",
+      "monthlyLimitLabel": "Initial monthly limit (cents)",
+      "submit": "Create client"
+    },
+    "quickActions": {
+      "title": "Quick actions"
+    },
+    "credit": {
+      "clientLabel": "Prepaid client",
+      "amountLabel": "Prepaid credit (cents)",
+      "submit": "Add credit"
+    },
+    "limit": {
+      "clientLabel": "Postpaid client",
+      "amountLabel": "New postpaid limit (cents)",
+      "submit": "Update limit"
+    },
+    "convert": {
+      "clientLabel": "Client to convert",
+      "planLabel": "New plan",
+      "balanceLabel": "Balance when converting to prepaid (cents)",
+      "limitLabel": "Monthly limit when converting to postpaid (cents)",
+      "submit": "Convert plan"
+    },
+    "table": {
+      "name": "Name",
+      "document": "Document",
+      "role": "Role",
+      "plan": "Plan",
+      "status": "Status",
+      "financial": "Financial",
+      "actions": "Actions"
+    },
+    "plans": {
+      "prepaid": "Prepaid",
+      "postpaid": "Postpaid"
+    },
+    "roles": {
+      "admin": "admin",
+      "client": "client"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "readOnly": "Read only"
+    },
+    "financial": {
+      "balance": "Balance {{amount}}",
+      "limitUsage": "Limit {{limit}} · Used {{used}}"
+    },
+    "feedback": {
+      "clientCreated": "Client created",
+      "creditAdded": "Credit added",
+      "limitUpdated": "Limit updated",
+      "statusUpdated": "Status updated",
+      "planConverted": "Plan converted"
+    },
+    "errors": {
+      "loadFailed": "Could not load clients",
+      "createFailed": "Could not create the client",
+      "noPrepaidClient": "No prepaid client available",
+      "creditFailed": "Could not add credit",
+      "noPostpaidClient": "No postpaid client available",
+      "limitFailed": "Could not update limit",
+      "statusFailed": "Could not update status",
+      "noConvertibleClient": "No client available for conversion",
+      "convertFailed": "Could not convert plan"
+    }
+  },
   "auth": {
     "kicker": "Identification",
     "title": "Client access",

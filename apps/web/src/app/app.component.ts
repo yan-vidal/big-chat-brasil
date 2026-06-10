@@ -81,7 +81,7 @@ import { PreferencesService, type SupportedLanguage } from './core/preferences/p
                 {{ 'nav.onboarding' | translate }}
               </a>
             }
-            @if (session.authenticated()) {
+            @if (session.authenticated() && !session.isAdmin()) {
               <a
                 class="whitespace-nowrap rounded px-3 py-2 text-slate-700 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800"
                 routerLink="/conversations"

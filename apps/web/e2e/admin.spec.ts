@@ -128,6 +128,32 @@ test.describe('admin console', () => {
     await expect(page.getByRole('heading', { name: 'Administração' })).toBeVisible();
   });
 
+  test('translates the administration panel when the language changes', async ({ page }) => {
+    await seedSession(page, adminSession);
+    await page.route('**/admin/clients', async (route) => fulfillJson(route, clients));
+
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: 'Administração' })).toBeVisible();
+
+    await page.getByLabel('Idioma').selectOption('en-US');
+
+    await expect(page.getByRole('heading', { name: 'Administration' })).toBeVisible();
+    await expect(
+      page.getByText('Operational management of clients, plans, credits and limits.'),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'New client' })).toBeVisible();
+    await expect(page.getByLabel('New client document')).toBeVisible();
+    await expect(page.getByLabel('Initial balance (cents)')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Quick actions' })).toBeVisible();
+    await expect(page.getByLabel('Client to convert')).toBeVisible();
+    await expect(
+      page.getByLabel('Monthly limit when converting to postpaid (cents)'),
+    ).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Financial' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Active' }).first()).toBeVisible();
+    await expect(page.getByText('Read only')).toBeVisible();
+  });
+
   test('keeps the admin route restricted to admin sessions', async ({ page }) => {
     await seedSession(page, clientSession);
 
@@ -216,7 +242,14 @@ test.describe('admin console', () => {
     await expect(page.getByText('Status atualizado')).toBeVisible();
 
     await page.getByLabel('Cliente para converter').selectOption(prepaidClientId);
+    await expect(page.getByLabel('Limite mensal ao converter para pós-pago')).toBeVisible();
+    await expect(page.getByLabel('Saldo ao converter para pré-pago')).toBeHidden();
+    await page.getByLabel('Novo plano').selectOption('prepaid');
+    await expect(page.getByLabel('Saldo ao converter para pré-pago')).toBeVisible();
+    await expect(page.getByLabel('Limite mensal ao converter para pós-pago')).toBeHidden();
     await page.getByLabel('Novo plano').selectOption('postpaid');
+    await expect(page.getByLabel('Limite mensal ao converter para pós-pago')).toBeVisible();
+    await expect(page.getByLabel('Saldo ao converter para pré-pago')).toBeHidden();
     await page.getByLabel('Limite mensal ao converter para pós-pago').fill('30000');
     await page.getByRole('button', { name: 'Converter plano' }).click();
     await expect(page.getByText('Plano convertido')).toBeVisible();

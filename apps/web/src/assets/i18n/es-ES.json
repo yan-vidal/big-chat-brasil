@@ -14,6 +14,89 @@
     "admin": "Administración",
     "logout": "Salir"
   },
+  "admin": {
+    "kicker": "Administración",
+    "title": "Administración",
+    "description": "Gestión operativa de clientes, planes, créditos y límites.",
+    "create": {
+      "title": "Nuevo cliente",
+      "documentLabel": "Documento del nuevo cliente",
+      "nameLabel": "Nombre del nuevo cliente",
+      "passwordLabel": "Contraseña del nuevo cliente",
+      "planLabel": "Plan",
+      "initialBalanceLabel": "Saldo inicial (centavos)",
+      "monthlyLimitLabel": "Límite mensual inicial (centavos)",
+      "submit": "Crear cliente"
+    },
+    "quickActions": {
+      "title": "Acciones rápidas"
+    },
+    "credit": {
+      "clientLabel": "Cliente prepago",
+      "amountLabel": "Crédito prepago (centavos)",
+      "submit": "Agregar crédito"
+    },
+    "limit": {
+      "clientLabel": "Cliente pospago",
+      "amountLabel": "Nuevo límite pospago (centavos)",
+      "submit": "Actualizar límite"
+    },
+    "convert": {
+      "clientLabel": "Cliente para convertir",
+      "planLabel": "Nuevo plan",
+      "balanceLabel": "Saldo al convertir a prepago (centavos)",
+      "limitLabel": "Límite mensual al convertir a pospago (centavos)",
+      "submit": "Convertir plan"
+    },
+    "table": {
+      "name": "Nombre",
+      "document": "Documento",
+      "role": "Rol",
+      "plan": "Plan",
+      "status": "Estado",
+      "financial": "Financiero",
+      "actions": "Acciones"
+    },
+    "plans": {
+      "prepaid": "Prepago",
+      "postpaid": "Pospago"
+    },
+    "roles": {
+      "admin": "admin",
+      "client": "cliente"
+    },
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "actions": {
+      "activate": "Activar",
+      "deactivate": "Desactivar",
+      "readOnly": "Solo lectura"
+    },
+    "financial": {
+      "balance": "Saldo {{amount}}",
+      "limitUsage": "Límite {{limit}} · Usado {{used}}"
+    },
+    "feedback": {
+      "clientCreated": "Cliente creado",
+      "creditAdded": "Crédito agregado",
+      "limitUpdated": "Límite actualizado",
+      "statusUpdated": "Estado actualizado",
+      "planConverted": "Plan convertido"
+    },
+    "errors": {
+      "loadFailed": "No fue posible cargar los clientes",
+      "createFailed": "No fue posible crear el cliente",
+      "noPrepaidClient": "No hay cliente prepago disponible",
+      "creditFailed": "No fue posible agregar crédito",
+      "noPostpaidClient": "No hay cliente pospago disponible",
+      "limitFailed": "No fue posible actualizar el límite",
+      "statusFailed": "No fue posible actualizar el estado",
+      "noConvertibleClient": "No hay cliente disponible para conversión",
+      "convertFailed": "No fue posible convertir el plan"
+    }
+  },
   "auth": {
     "kicker": "Identificación",
     "title": "Acceso del cliente",

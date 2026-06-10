@@ -259,6 +259,24 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - RED confirmado: o spec falhou primeiro porque `Documento do novo cliente` continuava preenchido; depois passou com 3 testes.
   - Gates verdes: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/admin.spec.ts` (3 testes), `pnpm format:check`, `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (19 testes).
   - Docker local atualizado: `docker compose build web` e `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; o teste admin focado passou contra `localhost:4200` com config Playwright temporária sem `webServer`, removida após a validação.
+- **Hotfix web - conversão admin mostra só o financeiro relevante e admin não vê navegação de cliente**:
+  - Pedido do Yan: na área `Cliente para converter`, exibir `Saldo ao converter para pré-pago` ou `Limite mensal ao converter para pós-pago` conforme o `Novo plano` selecionado; também ocultar `Conversas` e `Cobrança` para sessão admin.
+  - `apps/web/src/app/features/admin/admin-page.component.ts` agora renderiza apenas o input financeiro aplicável ao plano de destino da conversão.
+  - `apps/web/src/app/app.component.ts` agora mostra `Conversas` e `Cobrança` somente para sessão autenticada não-admin; admin mantém `Administração` e `Sair`.
+  - `apps/web/src/app/core/auth/auth.guard.ts` redireciona admin de `/conversations` e `/billing` para `/admin`, evitando acesso direto por URL às telas de cliente.
+  - `apps/web/e2e/admin.spec.ts` cobre a alternância dos campos de conversão; `apps/web/e2e/shell.spec.ts` cobre a navegação admin sem links de cliente e o redirecionamento de URL direta.
+  - RED confirmado: o spec focado falhou primeiro porque `Saldo ao converter para pré-pago` seguia visível com `Novo plano = Pós-pago`, porque `Conversas` seguia visível para admin e porque `/conversations` continuava acessível por URL direta; depois passou.
+  - Gates verdes: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/admin.spec.ts e2e/shell.spec.ts` (9 testes), `git diff --check`, `pnpm format:check`, `pnpm lint`, `pnpm build`, `pnpm test`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (20 testes).
+  - Docker local atualizado: `docker compose build web`, `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; `curl -I http://127.0.0.1:4200` retornou `HTTP/1.1 200 OK`.
+- **Hotfix web - painel admin passa a responder ao i18n**:
+  - Pedido do Yan: a mudança de idioma não surtia efeito na tela de admin; confirmar se o projeto usa i18n.
+  - Root cause: `AdminPageComponent` não importava `TranslatePipe` e mantinha textos, feedbacks e erros literais em português.
+  - `apps/web/src/app/features/admin/admin-page.component.ts` agora usa `TranslatePipe`/`TranslateService` para headings, labels, opções, botões, cabeçalhos, status, financeiro, feedbacks e erros.
+  - `apps/web/src/assets/i18n/{pt-BR,en-US,es-ES}.json` ganhou a árvore `admin.*`, mantendo paridade entre idiomas.
+  - Auditoria estática: todos os componentes de tela (`app`, `auth`, `onboarding`, `conversations`, `conversation-detail`, `billing`, `admin`) importam `TranslatePipe`; textos literais restantes são marca (`Big Chat Brasil`), nomes nativos dos idiomas e valores monetários fixos de seleção.
+  - RED confirmado: `e2e/admin.spec.ts -g "translates the administration panel"` falhou primeiro porque o heading `Administration` não aparecia após trocar idioma; depois passou.
+  - Gates verdes finais: `git diff --check`, `pnpm format:check`, `pnpm lint`, `pnpm build`, `pnpm test`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/admin.spec.ts e2e/shell.spec.ts e2e/i18n.spec.ts` (11 testes), `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (21 testes).
+  - Docker local atualizado novamente após i18n: `docker compose build web`, `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; `curl -I http://127.0.0.1:4200` retornou `HTTP/1.1 200 OK`.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -273,7 +291,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. O hotfix admin já está no log como `fix(web): improve admin client creation`; não há diff pendente desse bloco.
+2. O hotfix admin anterior já está no log como `fix(web): improve admin client creation`; o hotfix atual deve aparecer como `fix(web): localize admin console and navigation`.
 3. Fazer uma revisão final de entrega: checar README e `docs/challenge-compliance.md` do ponto de vista do avaliador, validar Docker/full-stack em ambiente limpo, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
 4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado. Se quiser maximizar aderência literal aos endpoints sugeridos, o próximo bloco opcional é adicionar aliases `/auth`, `/clients` e `GET /messages` sem mudar o fluxo principal.
 
