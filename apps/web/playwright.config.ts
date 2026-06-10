@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const port = 4200;
+const port = Number(process.env.E2E_WEB_PORT ?? 4210);
 const baseURL = `http://127.0.0.1:${port}`;
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
@@ -17,7 +17,7 @@ export default defineConfig({
     launchOptions: executablePath ? { executablePath } : undefined,
   },
   webServer: {
-    command: `pnpm build && node e2e/static-server.mjs --port ${port}`,
+    command: `pnpm build && node e2e/static-server.mjs --port ${port} --api-base-url=`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

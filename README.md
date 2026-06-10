@@ -32,12 +32,7 @@ Se a porta `3000` já estiver ocupada, a API pode ser publicada em outra porta:
 API_PUBLISHED_PORT=3002 docker compose up --build
 ```
 
-Nesse caso, no navegador, antes do login, execute no console:
-
-```js
-localStorage.setItem('bcb.api.baseUrl', 'http://localhost:3002');
-location.reload();
-```
+O web Docker recebe essa porta automaticamente e passa a chamar `http://localhost:3002`.
 
 ## Credenciais Demo
 
@@ -100,12 +95,6 @@ docker compose up --build
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack
 ```
 
-Se a API estiver publicada em porta alternativa:
-
-```bash
-E2E_API_BASE_URL=http://localhost:3002 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack
-```
-
 Testes de banco da API, com Postgres disponível:
 
 ```bash
@@ -137,7 +126,7 @@ pnpm --filter @bcb/api test:db
 - A fila é em memória, com recuperação de mensagens `queued`/`processing` no boot.
 - O reset mensal pós-pago é preguiçoso, feito no uso.
 - O seed roda no start da API em Docker para privilegiar demonstração reprodutível. Reiniciar a API reseta os dados demo.
-- O frontend usa `http://localhost:3000` como API padrão. Ambientes com proxy podem sobrescrever por `localStorage['bcb.api.baseUrl']`.
+- O frontend usa `http://localhost:3000` como fallback. No Docker, o web injeta a URL pública da API via `BCB_API_BASE_URL`; em desenvolvimento local, ainda é possível sobrescrever por `localStorage['bcb.api.baseUrl']`.
 - O WebSocket usa JWT no handshake e salas por cliente/conversa.
 
 ## Limitações Conhecidas

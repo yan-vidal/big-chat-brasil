@@ -48,6 +48,8 @@ Finish the challenge delivery so a reviewer can clone the repository, run `docke
 
 - The default Compose ports remain `3000`, `4200` and `5432`; host published ports can be overridden with `API_PUBLISHED_PORT`, `WEB_PUBLISHED_PORT` and `DB_PUBLISHED_PORT`.
 - Local verification used `API_PUBLISHED_PORT=3002` because another container already owned host port `3000`.
+- Follow-up hotfix added runtime API config injection through `BCB_API_BASE_URL`, so the Docker web automatically targets `http://localhost:${API_PUBLISHED_PORT:-3000}` and no browser console override is needed.
+- The mocked Playwright suite now serves the web on `127.0.0.1:4210` to avoid accidentally reusing the Docker web on `4200`.
 - `playwright.config.ts` excludes `full-stack.spec.ts`; the full-stack path runs only through `playwright.fullstack.config.ts`.
 - The README now documents Docker run, demo credentials, testing commands, implemented scope, assumptions, limitations and port-conflict workaround.
 

@@ -148,6 +148,14 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - TDD/depuração observados: full-stack falhou primeiro por conexão recusada; Docker build falhou por falta de `angular.json`/`postcss.config.json` no build context; Docker up local falhou porque outro container ocupava host `3000`; full-stack falhou com CORS por `127.0.0.1` versus `localhost`; e2e padrão falhou por coletar o spec full-stack. Todas as causas foram corrigidas na origem.
   - Verificação Docker: `docker compose config` passou; `docker compose build` passou; ambiente limpo com `docker compose down --volumes --remove-orphans` seguido de `API_PUBLISHED_PORT=3002 docker compose up --detach db api web` subiu banco healthy, API e web; logs da API confirmaram migrate, seed e start.
   - Gates verdes: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable E2E_API_BASE_URL=http://localhost:3002 pnpm test:e2e:fullstack` (1 teste), `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (11 testes), `pnpm format:check`, `docker compose config`, `docker compose build`.
+- **Hotfix pós-Sprint 10 - API base runtime no Docker web**:
+  - Sintoma reportado no navegador: `POST http://localhost:3000/auth/session net::ERR_SOCKET_NOT_CONNECTED/ERR_CONNECTION_RESET/ERR_EMPTY_RESPONSE`.
+  - Causa confirmada: nesta máquina, `big-chat-brasil-irrah-api-1` estava publicado em `3002->3000` porque o container externo `pokedex_api` ocupava host `3000`; o bundle web ainda usava o fallback `http://localhost:3000`.
+  - Correção: `docker-compose.yml` injeta `BCB_API_BASE_URL=http://localhost:${API_PUBLISHED_PORT:-3000}` no serviço web; `apps/web/e2e/static-server.mjs` injeta `window.__BCB_RUNTIME_CONFIG__` no `index.html`; `ApiClientService` resolve API base por `localStorage['bcb.api.baseUrl']`, depois runtime config, depois fallback `http://localhost:3000`.
+  - O teste `apps/web/e2e/full-stack.spec.ts` não injeta mais `localStorage`; ele valida que o browser usa a configuração runtime servida pelo Docker.
+  - A suíte Playwright mockada agora sobe o servidor estático em `4210` e força `--api-base-url=` para não reutilizar o web Docker de `4200` nem herdar `BCB_API_BASE_URL`.
+  - Verificação: RED reproduzido com `pnpm test:e2e:fullstack` ficando preso em `/login`; depois `docker compose build web` passou, `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web` recriou o web, e checagem dentro do container retornou HTTP `200` com `window.__BCB_RUNTIME_CONFIG__` e `http://localhost:3002` no HTML.
+  - Gates verdes finais: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack` (1 teste), `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (11 testes), `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm format:check`, `docker compose config`, `API_PUBLISHED_PORT=3002 docker compose config`.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -162,7 +170,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 10 e criar o commit sugerido `test: add e2e coverage for main chat flow`.
+2. Se o hotfix de API base runtime ainda não tiver sido commitado, revisar o diff e criar um commit pequeno, sugerido `fix(web): read api base url from docker runtime config`.
 3. Com Sprint 10 commitada, fazer uma revisão final de entrega: checar README do ponto de vista do avaliador, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
 4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado.
 
@@ -201,10 +209,11 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - O simulador de destinatário fica ligado por padrão; em testes que afirmam estados finais da fila, setar `RECIPIENT_SIMULATOR_ENABLED=false`.
 - A shell web agora usa sessão real em `bcb.session`. Não voltar para as chaves provisórias `bcb.session.active`/`bcb.onboarding.completed`.
 - `apps/web` ainda não tem runner unitário real; `pnpm test` segue placeholder. A cobertura efetiva das Sprints 7/8/9 está em Playwright visual/rotas/preferências/fluxos HTTP mockados e eventos realtime injetados.
-- O `ApiClientService` usa `http://localhost:3000` por padrão; para ambientes servidos por proxy/reverse proxy, ajustar via `localStorage['bcb.api.baseUrl']` conforme documentado no README.
+- O `ApiClientService` usa `localStorage['bcb.api.baseUrl']` como override manual, depois `window.__BCB_RUNTIME_CONFIG__.apiBaseUrl` injetado pelo web Docker, e só então o fallback `http://localhost:3000`.
+- `pnpm test:e2e` usa `127.0.0.1:4210` para não conflitar com o web Docker manual em `4200`.
 - Em Playwright web, mocks de API devem mirar `http://localhost:3000/...`; padrões amplos como `**/conversations` interceptam a navegação SPA do servidor estático e retornam JSON como documento.
 - O e2e full-stack deve rodar pelo script/config dedicado (`pnpm test:e2e:fullstack`); não colocar `full-stack.spec.ts` de volta na suíte mockada padrão.
-- Nesta máquina, a porta host `3000` estava ocupada pelo container externo `pokedex_api`; a validação Docker local usou `API_PUBLISHED_PORT=3002` e `E2E_API_BASE_URL=http://localhost:3002`. Em uma máquina limpa, o README usa o default `3000`.
+- Nesta máquina, a porta host `3000` estava ocupada pelo container externo `pokedex_api`; a validação Docker local usa `API_PUBLISHED_PORT=3002`. Depois do hotfix, não use mais `E2E_API_BASE_URL` nem console do navegador para esse caso.
 
 ## Pendências que dependem do Yan
 
