@@ -25,6 +25,10 @@ EXPOSE 3000
 
 CMD ["sh", "-c", "pnpm --filter @bcb/api db:migrate && pnpm --filter @bcb/api db:seed && pnpm --filter @bcb/api start"]
 
+FROM base AS worker
+
+CMD ["pnpm", "--filter", "@bcb/api", "start:worker"]
+
 FROM base AS web
 
 ENV WEB_HOST="0.0.0.0"

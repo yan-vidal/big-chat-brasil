@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { BillingModule } from './billing/billing.module.js';
 import { ConversationsModule } from './conversations/conversations.module.js';
 import { DatabaseModule } from './database/database.module.js';
+import { InternalModule } from './internal/internal.module.js';
 import { MessagesModule } from './messages/messages.module.js';
 import { QueueModule } from './queue/queue.module.js';
 import { RealtimeModule } from './realtime/realtime.module.js';
@@ -19,6 +20,7 @@ import { SimulatorModule } from './simulator/simulator.module.js';
     RecipientsModule,
     ConversationsModule,
     RealtimeModule,
+    InternalModule,
     QueueModule,
     MessagesModule,
     SimulatorModule,

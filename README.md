@@ -21,6 +21,7 @@ Depois acesse:
 - OpenAPI JSON: `http://localhost:3000/docs-json`
 
 Na inicialização, a API executa automaticamente `db:migrate` e `db:seed`. Isso deixa o banco pronto para demonstração sem passos manuais.
+O Compose também sobe um serviço `worker` separado para processar a fila de mensagens; a API apenas persiste a mensagem e emite eventos realtime quando o worker chama a ponte interna.
 
 Para encerrar e apagar o banco local:
 
@@ -56,7 +57,7 @@ Também é possível entrar com um CPF/CNPJ válido novo e senha qualquer. A con
 - Listagem de conversas, busca, badges de não lidas e criação de nova conversa.
 - Tela de conversa com histórico, bolhas, status, prioridade normal/urgente e composer.
 - Cobrança por mensagem: normal `R$0,25`, urgente `R$0,50`.
-- Fila em memória com prioridade urgente e anti-starvation.
+- Fila processada por worker separado, com prioridade urgente, anti-starvation, polling do banco e recuperação de mensagens pendentes.
 - Socket.IO autenticado para status, novas mensagens, atualização de conversa e digitação.
 - Simulador de destinatário que marca mensagens como lidas, mostra digitação e responde.
 - Swagger/OpenAPI gerado pela API, com schemas e teste para manter endpoints documentados.
@@ -124,11 +125,27 @@ pnpm --filter @bcb/api test:db
 - `GET /queue/status`
 - Socket.IO namespace `/chat`
 
+## Worker da Fila
+
+No Docker, a fila roda fora do processo HTTP:
+
+- `api`: recebe requisições, persiste mensagens `queued`, mantém Socket.IO e simulador de destinatário.
+- `worker`: faz polling de mensagens `queued`/`processing` no PostgreSQL, aplica prioridade e avança status `processing -> sent -> delivered`.
+- Ponte interna: o worker chama `POST /internal/realtime/message-status` no API usando `x-internal-token`; o API publica o evento Socket.IO e aciona o simulador.
+
+Variáveis principais:
+
+- `QUEUE_PROCESSOR_ENABLED=false` no API Docker evita processamento local.
+- `QUEUE_STATUS_PUBLISHER=http` no worker usa a ponte interna.
+- `QUEUE_POLL_INTERVAL_MS=250` define a frequência de descoberta de mensagens novas.
+- `INTERNAL_API_BASE_URL=http://api:3000` aponta o worker para o API na rede Docker.
+- `INTERNAL_API_TOKEN` protege a ponte interna; em produção, trocar o default.
+
 ## Decisões e Premissas
 
 - Kysely foi escolhido para manter SQL explícito e controle de transações.
 - Dinheiro é sempre armazenado em centavos inteiros.
-- A fila é em memória, com recuperação de mensagens `queued`/`processing` no boot.
+- A fila usa estruturas em memória dentro do worker, mas a fonte de verdade é o PostgreSQL; mensagens `queued`/`processing` são recuperadas no boot e por polling.
 - O reset mensal pós-pago é preguiçoso, feito no uso.
 - O seed roda no start da API em Docker para privilegiar demonstração reprodutível. Reiniciar a API reseta os dados demo.
 - O frontend usa `http://localhost:3000` como fallback. No Docker, o web injeta a URL pública da API via `BCB_API_BASE_URL`; em desenvolvimento local, ainda é possível sobrescrever por `localStorage['bcb.api.baseUrl']`.
@@ -137,7 +154,7 @@ pnpm --filter @bcb/api test:db
 ## Limitações Conhecidas
 
 - Sem paginação real de mensagens; o MVP retorna as últimas mensagens da conversa.
-- Sem broker externo para fila; Redis/RabbitMQ seria o próximo passo para produção.
+- Sem broker externo para fila; Redis/RabbitMQ ou pub/sub compartilhado seria o próximo passo para produção.
 - `apps/web` ainda não tem runner unitário/component real; a cobertura de frontend está nos testes Playwright.
 - O servidor web Docker usa um servidor estático Node simples, não Nginx.
 

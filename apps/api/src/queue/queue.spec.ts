@@ -47,6 +47,11 @@ describeDatabase('queue HTTP API and processor', () => {
     await app?.close();
     await db?.destroy();
     delete process.env.QUEUE_AUTOSTART;
+    delete process.env.QUEUE_PROCESSOR_ENABLED;
+    delete process.env.QUEUE_POLL_INTERVAL_MS;
+    delete process.env.QUEUE_STATUS_PUBLISHER;
+    delete process.env.INTERNAL_API_BASE_URL;
+    delete process.env.INTERNAL_API_TOKEN;
     delete process.env.QUEUE_SENT_DELAY_MS;
     delete process.env.QUEUE_DELIVERED_DELAY_MS;
     delete process.env.RECIPIENT_SIMULATOR_ENABLED;
@@ -106,6 +111,35 @@ describeDatabase('queue HTTP API and processor', () => {
       .expect(201);
 
     return response.body.id as string;
+  }
+
+  async function waitForDatabaseStatus(
+    messageId: string,
+    expectedStatus: string,
+    timeoutMs = 1000,
+  ): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    let lastStatus: string | undefined;
+
+    while (Date.now() < deadline) {
+      const message = await db
+        .selectFrom('messages')
+        .select(['status'])
+        .where('id', '=', messageId)
+        .executeTakeFirst();
+
+      lastStatus = message?.status;
+
+      if (lastStatus === expectedStatus) {
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    throw new Error(
+      `Timed out waiting for message ${messageId} to become ${expectedStatus}; last status was ${lastStatus}`,
+    );
   }
 
   it('allows admin and rejects client access to queue status', async () => {
@@ -271,5 +305,27 @@ describeDatabase('queue HTTP API and processor', () => {
           urgentQueued: 1,
         });
       });
+  });
+
+  it('polls queued messages created after bootstrap and processes them', async () => {
+    process.env.QUEUE_AUTOSTART = 'true';
+    process.env.QUEUE_POLL_INTERVAL_MS = '25';
+    await initApp();
+    const session = await createSession('11222333000181', 'CNPJ');
+    const conversationId = await firstEmpresaConversation(session);
+    const message = await db
+      .insertInto('messages')
+      .values({
+        conversation_id: conversationId,
+        sender_type: 'client',
+        content: 'Mensagem descoberta por polling',
+        priority: 'normal',
+        status: 'queued',
+        cost_cents: 25,
+      })
+      .returning(['id'])
+      .executeTakeFirstOrThrow();
+
+    await waitForDatabaseStatus(message.id, 'delivered');
   });
 });

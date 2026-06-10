@@ -1,17 +1,25 @@
-import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
-import { RealtimePublisher } from '../realtime/realtime.publisher.js';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
 import { getQueueConfig, type QueueConfig } from './queue.config.js';
 import { QueueRepository } from './queue.repository.js';
+import { QUEUE_STATUS_PUBLISHER, type QueueStatusPublisher } from './queue-status.publisher.js';
 import type { QueueJob, QueueMessageStatusUpdate, QueueStatus } from './queue.types.js';
 
 const URGENT_BEFORE_NORMAL_LIMIT = 3;
 
 @Injectable()
-export class QueueService implements OnModuleInit {
+export class QueueService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(QueueService.name);
   private readonly config: QueueConfig = getQueueConfig();
   private readonly normalQueue: QueueJob[] = [];
   private readonly urgentQueue: QueueJob[] = [];
+  private readonly trackedMessageIds = new Set<string>();
+  private pollTimer: NodeJS.Timeout | undefined;
   private processing = false;
   private processedCount = 0;
   private failedCount = 0;
@@ -19,32 +27,53 @@ export class QueueService implements OnModuleInit {
 
   constructor(
     private readonly queueRepository: QueueRepository,
-    private readonly realtimePublisher: RealtimePublisher,
+    @Inject(QUEUE_STATUS_PUBLISHER)
+    private readonly statusPublisher: QueueStatusPublisher,
   ) {}
 
   async onModuleInit(): Promise<void> {
-    const recoverableMessages = await this.queueRepository.listRecoverableMessages();
-
-    for (const message of recoverableMessages) {
-      this.enqueue(message, { startProcessing: false });
+    if (!this.config.processorEnabled) {
+      this.logger.log('Queue processor disabled for this process');
+      return;
     }
 
-    if (recoverableMessages.length > 0) {
-      this.logger.log(`Recovered ${recoverableMessages.length} pending messages`);
-    }
+    await this.recoverPendingMessages();
 
     if (this.config.autostart) {
       this.kick();
     }
+
+    if (this.config.pollIntervalMs > 0) {
+      this.pollTimer = setInterval(() => {
+        void this.pollPendingMessages();
+      }, this.config.pollIntervalMs);
+    }
   }
 
-  enqueue(job: QueueJob, options: { readonly startProcessing?: boolean } = {}): void {
+  onModuleDestroy(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+    }
+  }
+
+  enqueue(job: QueueJob, options: { readonly startProcessing?: boolean } = {}): boolean {
+    if (!this.config.processorEnabled) {
+      return false;
+    }
+
+    if (this.trackedMessageIds.has(job.messageId)) {
+      return false;
+    }
+
+    this.trackedMessageIds.add(job.messageId);
     const targetQueue = job.priority === 'urgent' ? this.urgentQueue : this.normalQueue;
     targetQueue.push(job);
 
     if (options.startProcessing ?? this.config.autostart) {
       this.kick();
     }
+
+    return true;
   }
 
   getStatus(): QueueStatus {
@@ -62,6 +91,10 @@ export class QueueService implements OnModuleInit {
   }
 
   private kick(): void {
+    if (!this.config.processorEnabled) {
+      return;
+    }
+
     if (this.processing) {
       return;
     }
@@ -76,6 +109,10 @@ export class QueueService implements OnModuleInit {
   }
 
   private async processNext(): Promise<boolean> {
+    if (!this.config.processorEnabled) {
+      return false;
+    }
+
     if (this.processing) {
       return false;
     }
@@ -100,9 +137,39 @@ export class QueueService implements OnModuleInit {
       this.logger.error(`Failed processing message ${job.messageId}`, error);
     } finally {
       this.processing = false;
+      this.trackedMessageIds.delete(job.messageId);
     }
 
     return true;
+  }
+
+  private async pollPendingMessages(): Promise<void> {
+    try {
+      const recoveredCount = await this.recoverPendingMessages();
+
+      if (recoveredCount > 0 && this.config.autostart) {
+        this.kick();
+      }
+    } catch (error) {
+      this.logger.error('Failed polling pending queue messages', error);
+    }
+  }
+
+  private async recoverPendingMessages(): Promise<number> {
+    const recoverableMessages = await this.queueRepository.listRecoverableMessages();
+    let recoveredCount = 0;
+
+    for (const message of recoverableMessages) {
+      if (this.enqueue(message, { startProcessing: false })) {
+        recoveredCount += 1;
+      }
+    }
+
+    if (recoveredCount > 0) {
+      this.logger.log(`Recovered ${recoveredCount} pending messages`);
+    }
+
+    return recoveredCount;
   }
 
   private dequeueNext(): QueueJob | undefined {
@@ -133,12 +200,7 @@ export class QueueService implements OnModuleInit {
       return;
     }
 
-    this.realtimePublisher.publishMessageStatus(updated.clientId, {
-      messageId: updated.messageId,
-      conversationId: updated.conversationId,
-      status: updated.status,
-      occurredAt: this.toIso(updated.occurredAt),
-    });
+    await this.statusPublisher.publishMessageStatus(updated);
   }
 
   private async delay(durationMs: number): Promise<void> {
@@ -147,9 +209,5 @@ export class QueueService implements OnModuleInit {
     }
 
     await new Promise((resolve) => setTimeout(resolve, durationMs));
-  }
-
-  private toIso(value: Date | string): string {
-    return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
   }
 }

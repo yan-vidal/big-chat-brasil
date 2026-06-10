@@ -11,6 +11,7 @@ import { resetDatabaseForTests } from '../database/testing.js';
 import { RealtimePublisher } from './realtime.publisher.js';
 import type { Database } from '../database/database.types.js';
 import type { Kysely } from 'kysely';
+import type { RealtimeDomainEvent } from './realtime.types.js';
 import type { Server } from 'node:http';
 
 const describeDatabase = process.env.BCB_RUN_DB_TESTS === 'true' ? describe : describe.skip;
@@ -40,6 +41,7 @@ describeDatabase('chat websocket gateway', () => {
     process.env.QUEUE_SENT_DELAY_MS = '0';
     process.env.QUEUE_DELIVERED_DELAY_MS = '0';
     process.env.RECIPIENT_SIMULATOR_ENABLED = 'false';
+    process.env.INTERNAL_API_TOKEN = 'test-internal-token';
     db = createDatabase(getDatabaseUrl());
     await resetDatabaseForTests(db);
     await migrateToLatest(db);
@@ -67,6 +69,7 @@ describeDatabase('chat websocket gateway', () => {
     delete process.env.QUEUE_SENT_DELAY_MS;
     delete process.env.QUEUE_DELIVERED_DELAY_MS;
     delete process.env.RECIPIENT_SIMULATOR_ENABLED;
+    delete process.env.INTERNAL_API_TOKEN;
   });
 
   async function createSession(
@@ -208,5 +211,44 @@ describeDatabase('chat websocket gateway', () => {
 
     await expect(typingPromise).resolves.toMatchObject({ conversationId, senderType: 'user' });
     await expectNoSocketEvent(postpaidSocket, 'typing.started');
+  });
+
+  it('protects the internal worker realtime bridge and publishes status events', async () => {
+    const empresa = await createSession('11222333000181', 'CNPJ');
+    const conversationId = await firstEmpresaConversation(empresa);
+    const events: RealtimeDomainEvent[] = [];
+    const subscription = realtimePublisher.events$.subscribe((event) => events.push(event));
+    const payload = {
+      clientId: empresa.client.id,
+      messageId: '550e8400-e29b-41d4-a716-446655440020',
+      conversationId,
+      status: 'delivered',
+      occurredAt: '2026-06-10T12:00:00.000Z',
+    };
+
+    await request(server).post('/internal/realtime/message-status').send(payload).expect(401);
+    await request(server)
+      .post('/internal/realtime/message-status')
+      .set('x-internal-token', 'wrong-token')
+      .send(payload)
+      .expect(401);
+
+    await request(server)
+      .post('/internal/realtime/message-status')
+      .set('x-internal-token', 'test-internal-token')
+      .send(payload)
+      .expect(202);
+
+    expect(events).toContainEqual({
+      name: 'message.status',
+      clientId: empresa.client.id,
+      payload: {
+        messageId: payload.messageId,
+        conversationId,
+        status: 'delivered',
+        occurredAt: payload.occurredAt,
+      },
+    });
+    subscription.unsubscribe();
   });
 });

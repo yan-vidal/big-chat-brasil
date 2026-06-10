@@ -25,6 +25,8 @@ services:
       JWT_EXPIRES_IN: 1d
       API_PORT: 3000
       CORS_ORIGIN: http://localhost:4200
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-dev-internal-token}
+      QUEUE_PROCESSOR_ENABLED: 'false'
       QUEUE_SENT_DELAY_MS: 500
       QUEUE_DELIVERED_DELAY_MS: 1000
       RECIPIENT_SIMULATOR_ENABLED: 'true'
@@ -34,6 +36,36 @@ services:
       - '${API_PUBLISHED_PORT:-3000}:3000'
     depends_on:
       db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3000/health'').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: .
+      target: worker
+    environment:
+      DATABASE_URL: postgres://bcb:bcb@db:5432/bcb
+      JWT_SECRET: dev-secret-change-me
+      JWT_EXPIRES_IN: 1d
+      INTERNAL_API_BASE_URL: http://api:3000
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-dev-internal-token}
+      QUEUE_PROCESSOR_ENABLED: 'true'
+      QUEUE_STATUS_PUBLISHER: http
+      QUEUE_POLL_INTERVAL_MS: 250
+      QUEUE_SENT_DELAY_MS: 500
+      QUEUE_DELIVERED_DELAY_MS: 1000
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
         condition: service_healthy
 
   web:
