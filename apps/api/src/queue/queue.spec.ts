@@ -1,4 +1,5 @@
 import { type INestApplication } from '@nestjs/common';
+import { ADMIN_DOCUMENT_ID } from '@bcb/shared';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../app.module.js';
@@ -144,7 +145,7 @@ describeDatabase('queue HTTP API and processor', () => {
 
   it('allows admin and rejects client access to queue status', async () => {
     await initApp();
-    const admin = await createSession('52998224725', 'CPF', 'Admin@123');
+    const admin = await createSession(ADMIN_DOCUMENT_ID, 'CPF', 'Admin@123');
     const client = await createSession('11222333000181', 'CNPJ');
 
     await request(server)
@@ -296,7 +297,7 @@ describeDatabase('queue HTTP API and processor', () => {
       .get('/queue/status')
       .set(
         'Authorization',
-        `Bearer ${(await createSession('52998224725', 'CPF', 'Admin@123')).token}`,
+        `Bearer ${(await createSession(ADMIN_DOCUMENT_ID, 'CPF', 'Admin@123')).token}`,
       )
       .expect(200)
       .expect(({ body }) => {

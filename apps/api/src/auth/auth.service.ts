@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
+  ADMIN_DOCUMENT_ID,
   AuthMeResponseSchema,
   AuthSessionResponseSchema,
   JwtPayloadSchema,
@@ -27,6 +28,10 @@ export class AuthService {
 
   async createSession(request: AuthSessionRequest): Promise<AuthSessionResponse> {
     const existingIdentity = await this.authRepository.findIdentityByDocument(request.documentId);
+    if (!existingIdentity && request.documentId === ADMIN_DOCUMENT_ID) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
+    }
+
     const identity = existingIdentity
       ? await this.validateExistingIdentity(existingIdentity, request.password)
       : await this.createIdentity(request);

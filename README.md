@@ -22,6 +22,7 @@ Depois acesse:
 
 Na inicialização, a API executa automaticamente `db:migrate` e `db:seed`. Isso deixa o banco pronto para demonstração sem passos manuais.
 O Compose também sobe um serviço `worker` separado para processar a fila de mensagens; a API apenas persiste a mensagem e emite eventos realtime quando o worker chama a ponte interna.
+A senha da conta admin inicial vem de `BCB_ADMIN_PASSWORD` e, no Docker Compose, usa `Admin@123` como fallback (`${BCB_ADMIN_PASSWORD:-Admin@123}`).
 
 Para encerrar e apagar o banco local:
 
@@ -39,19 +40,21 @@ O web Docker recebe essa porta automaticamente e passa a chamar `http://localhos
 
 ## Credenciais Demo
 
-| Perfil              | Documento        | Tipo | Senha       | Observação                   |
-| ------------------- | ---------------- | ---- | ----------- | ---------------------------- |
-| Admin               | `52998224725`    | CPF  | `Admin@123` | Acesso para endpoints admin  |
-| Empresa ABC         | `11222333000181` | CNPJ | `Demo@123`  | Pré-pago, saldo inicial R$25 |
-| Pré-pago sem saldo  | `11144477735`    | CPF  | `Demo@123`  | Exercita saldo insuficiente  |
-| Pós-pago com limite | `11444777000161` | CNPJ | `Demo@123`  | Limite mensal R$100          |
-| Pós-pago no limite  | `12345678909`    | CPF  | `Demo@123`  | Exercita limite insuficiente |
+| Perfil              | Documento        | Tipo | Senha                               | Observação                        |
+| ------------------- | ---------------- | ---- | ----------------------------------- | --------------------------------- |
+| Admin               | `00000000000`    | CPF  | `BCB_ADMIN_PASSWORD` ou `Admin@123` | Painel `/admin` e endpoints admin |
+| Empresa ABC         | `11222333000181` | CNPJ | `Demo@123`                          | Pré-pago, saldo inicial R$25      |
+| Pré-pago sem saldo  | `11144477735`    | CPF  | `Demo@123`                          | Exercita saldo insuficiente       |
+| Pós-pago com limite | `11444777000161` | CNPJ | `Demo@123`                          | Limite mensal R$100               |
+| Pós-pago no limite  | `12345678909`    | CPF  | `Demo@123`                          | Exercita limite insuficiente      |
 
-Também é possível entrar com um CPF/CNPJ válido novo e senha qualquer. A conta é criada automaticamente e segue para o onboarding.
+Também é possível entrar com um CPF/CNPJ válido novo e senha qualquer. A conta é criada automaticamente e segue para o onboarding. O CPF especial `00000000000` é reservado exclusivamente para a conta admin seedada.
 
 ## Funcionalidades
 
 - Login por documento e senha, com validação de CPF/CNPJ.
+- Login único para cliente e admin; o backend define a `role` no JWT e o frontend apenas redireciona pelo retorno da sessão.
+- Painel administrativo em `/admin` para listar contas, criar clientes, ativar/inativar, adicionar crédito, alterar limite pós-pago e converter plano.
 - Auto-registro de novo cliente.
 - Onboarding pré-pago com PIX simulado e pós-pago com limite mensal.
 - Listagem de conversas, busca, badges de não lidas e criação de nova conversa com recipients simulados ou contas reais.
@@ -112,6 +115,12 @@ pnpm --filter @bcb/api test:db
 - `GET /docs-json`
 - `POST /auth/session`
 - `GET /auth/me`
+- `GET /admin/clients`
+- `POST /admin/clients`
+- `PATCH /admin/clients/:id/status`
+- `POST /admin/clients/:id/credits`
+- `PATCH /admin/clients/:id/limit`
+- `POST /admin/clients/:id/plan`
 - `POST /billing/onboarding`
 - `POST /billing/pix-intents`
 - `POST /billing/pix-intents/:id/confirm`
@@ -136,6 +145,7 @@ No Docker, a fila roda fora do processo HTTP:
 
 Variáveis principais:
 
+- `BCB_ADMIN_PASSWORD` define a senha da conta admin `00000000000`; no Compose, o fallback é `Admin@123`.
 - `QUEUE_PROCESSOR_ENABLED=false` no API Docker evita processamento local.
 - `QUEUE_STATUS_PUBLISHER=http` no worker usa a ponte interna.
 - `QUEUE_POLL_INTERVAL_MS=250` define a frequência de descoberta de mensagens novas.

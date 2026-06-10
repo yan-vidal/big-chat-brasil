@@ -15,7 +15,13 @@ export const MESSAGE_STATUS_VALUES = [
 export const SENDER_TYPE_VALUES = ['client', 'user'] as const;
 export const PAYMENT_INTENT_STATUS_VALUES = ['pending', 'confirmed'] as const;
 export const PAYMENT_METHOD_VALUES = ['pix'] as const;
-export const BILLING_TRANSACTION_TYPE_VALUES = ['credit', 'debit', 'usage', 'refund'] as const;
+export const BILLING_TRANSACTION_TYPE_VALUES = [
+  'credit',
+  'debit',
+  'usage',
+  'refund',
+  'adjustment',
+] as const;
 
 export const RoleSchema = z.enum(ROLE_VALUES);
 export const PlanTypeSchema = z.enum(PLAN_TYPE_VALUES);

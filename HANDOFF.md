@@ -194,6 +194,22 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - Depuração observada: a suíte DB completa expôs um teste de seed ainda contando apenas recipients simulados; ele foi corrigido para validar simulados e recipients de contas separadamente. O full-stack novo também pegou um seletor de botão desatualizado (`Enviar mensagem` vs. `Enviar nova conversa`) e foi corrigido pelo snapshot do Playwright.
   - Gates finais verdes: `pnpm build`, `docker compose stop api worker web`, `pnpm --filter @bcb/api test:db` (16 suites/52 testes), `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (11 testes), `pnpm format:check`, `docker compose config`, `docker compose build`, `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate db api worker web`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack` (2 testes).
   - Estado operacional ao fechar o bloco: stack Docker ficou rodando para demo local, com API em `localhost:3002`, web em `localhost:4200`, DB healthy em `5432` e worker ativo; logs recentes mostram `Queue processor disabled for this process` na API e `Queue worker started` no worker.
+- **Bloco Admin Management Console implementado neste commit**:
+  - Plano detalhado: `docs/superpowers/plans/2026-06-10-admin-management-console.md`.
+  - Conta admin seedada com documento reservado `00000000000`, senha por `BCB_ADMIN_PASSWORD` e fallback Docker Compose `${BCB_ADMIN_PASSWORD:-Admin@123}`. Este documento continua rejeitado pelo validador genérico de CPF/CNPJ e é aceito apenas no contrato de login.
+  - `POST /auth/session` usa a mesma tela/rota para cliente e admin. O backend é a única fonte da `role`, assina o JWT com `role='admin'` para a conta seedada e impede auto-registro do documento reservado se a seed estiver ausente.
+  - Admin não vira recipient de chat. `seed.ts` cria recipients apenas para contas `client` com onboarding completo.
+  - Novo `AdminModule` com endpoints protegidos por `JwtAuthGuard`, `RolesGuard` e `@Roles('admin')`: `GET/POST /admin/clients`, `PATCH /admin/clients/:id/status`, `POST /admin/clients/:id/credits`, `PATCH /admin/clients/:id/limit`, `POST /admin/clients/:id/plan`.
+  - Payloads admin são schemas Zod `.strict()`: campo `role` é somente leitura e qualquer tentativa de envio em criação/mutação é rejeitada. Mutar a própria conta admin também retorna conflito.
+  - Financial ops administrativas gravam `billing_transactions` com novo tipo `adjustment`; a migration `003_billing_adjustments` atualiza a constraint do banco.
+  - Frontend ganhou rota `/admin`, `adminGuard`, redirecionamento por role após login, item de navegação "Administração" apenas para sessão admin, `AdminApiService` e tela para listar contas, criar cliente, ativar/inativar, adicionar crédito, alterar limite e converter plano. A UI não envia `role`.
+  - Swagger/OpenAPI agora documenta a tag `Admin`, schemas/payloads admin e os novos paths. `openapi.spec.ts` trava paths, bearer auth e schemas críticos.
+  - README documenta o admin `00000000000`, `BCB_ADMIN_PASSWORD`, fallback `Admin@123`, `/admin` e endpoints admin.
+  - TDD observado: shared contracts para documento admin, Supertest DB para auth/admin, Playwright admin e OpenAPI foram escritos/ajustados antes da implementação correspondente. O E2E admin falhou primeiro esperando `Inativar`/conversão e passou após a UI expor essas ações.
+  - Gates finais verdes deste bloco: `pnpm lint`; `pnpm test` (shared 6 arquivos/30 testes, API isolada 7 suites/16 testes, DB suites puladas como esperado, web placeholder); `pnpm build`; `pnpm --filter @bcb/api test:db` (17 suites/57 testes); `pnpm format:check`; `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (14 testes); `API_PUBLISHED_PORT=3002 docker compose config`; `docker compose build`; `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate db api worker web`; `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack` (2 testes).
+  - Validação Docker adicional: login direto em `http://localhost:3002/auth/session` com `00000000000`/`Admin@123` retornou HTTP `201`, `role='admin'`, `documentId='00000000000'` e `requiresOnboarding=false`.
+  - Validação visual adicional: screenshots Playwright do painel admin Docker em desktop e mobile (`/tmp/bcb-admin-docker.png`, `/tmp/bcb-admin-mobile-docker.png`) confirmaram heading, 5 linhas de tabela e layout sem sobreposição óbvia depois do ajuste no grid do formulário "Novo cliente".
+  - Estado operacional ao fechar o bloco: stack Docker ficou rodando para demo local, com API em `localhost:3002`, web em `localhost:4200`, DB healthy em `5432` e worker ativo.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -208,9 +224,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Confirmar se o bloco de comunicação entre contas reais aparece no log como `feat(chat): allow account to account conversations`; se não aparecer, revisar o diff e commitar esse bloco antes de seguir.
-3. Fazer uma revisão final de entrega: checar README do ponto de vista do avaliador, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
-4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado, e worker separado + conversa entre contas reais foram tratados como melhorias técnicas/demonstração.
+2. Confirmar se o bloco admin aparece no log como `feat(admin): add management console`; se não aparecer, revisar o diff deste bloco e commitar antes de seguir.
+3. Fazer uma revisão final de entrega: checar README do ponto de vista do avaliador, validar Docker/full-stack em ambiente limpo, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
+4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado, e worker separado, conversa entre contas reais e painel admin foram tratados como melhorias técnicas/demonstração.
 
 ## Skills sugeridas para o próximo agente
 
@@ -257,6 +273,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - Para recipients reais, não ativar o simulador: ele deve responder apenas quando `recipients.client_profile_id is null`.
 - Logs de navegador com `console-log.service.ts`, `background.js`, `Fido2Client`, `SignalR`, `triggerAutofillScriptInjection` e chamadas para `hidden42gate.yanlucas.com` são de extensão do browser/perfil local, não do BCB. Testar em perfil limpo/incógnito com extensões desativadas remove esse ruído.
 - Ao adicionar/alterar endpoint REST, atualizar `OPENAPI_OPERATIONS` e `OPENAPI_SCHEMAS`; `pnpm --filter @bcb/api test -- openapi.spec.ts` deve falhar se a documentação não acompanhar a rota.
+- O documento admin `00000000000` é uma exceção intencional somente para login/seed; não trocar `DocumentIdSchema` genérico para aceitar CPFs repetidos.
+- `BCB_ADMIN_PASSWORD` fica no Compose com default `${BCB_ADMIN_PASSWORD:-Admin@123}`. Não hardcodar outra senha em testes/docs sem atualizar `.env.example`, README e seed-data.
 
 ## Pendências que dependem do Yan
 

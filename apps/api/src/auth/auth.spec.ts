@@ -1,5 +1,6 @@
 import { type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { ADMIN_DOCUMENT_ID } from '@bcb/shared';
 import { generateCpf } from '@bcb/shared/testing';
 import request from 'supertest';
 import { AppModule } from '../app.module.js';
@@ -120,6 +121,40 @@ describeDatabase('auth HTTP API', () => {
       documentId: '11222333000181',
       documentType: 'CNPJ',
       role: 'client',
+      requiresOnboarding: false,
+    });
+  });
+
+  it('logs in the reserved admin CPF with the default admin password', async () => {
+    const response = await request(server)
+      .post('/auth/session')
+      .send({
+        documentId: '000.000.000-00',
+        documentType: 'CPF',
+        password: 'Admin@123',
+      })
+      .expect(201);
+
+    expect(response.body).toMatchObject({
+      token: expect.any(String),
+      requiresOnboarding: false,
+      client: {
+        name: 'Administrador BCB',
+        documentId: ADMIN_DOCUMENT_ID,
+        documentType: 'CPF',
+        role: 'admin',
+        planType: 'prepaid',
+        active: true,
+        onboardingCompleted: true,
+        balanceCents: 0,
+        monthlyUsedCents: 0,
+      },
+    });
+    expect(response.body.client).not.toHaveProperty('monthlyLimitCents');
+    expect(decodeJwtPayload(response.body.token)).toMatchObject({
+      documentId: ADMIN_DOCUMENT_ID,
+      documentType: 'CPF',
+      role: 'admin',
       requiresOnboarding: false,
     });
   });

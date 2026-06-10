@@ -3,6 +3,7 @@ import {
   CnpjSchema,
   CpfSchema,
   DocumentIdSchema,
+  LoginDocumentIdSchema,
   inferDocumentType,
   isValidCnpj,
   isValidCpf,
@@ -47,5 +48,10 @@ describe('document normalization and validation', () => {
   it('rejects invalid check digits and letters', () => {
     expect(DocumentIdSchema.safeParse('529.982.247-24').success).toBe(false);
     expect(DocumentIdSchema.safeParse('abc52998224725').success).toBe(false);
+  });
+
+  it('accepts the reserved admin CPF only for login documents', () => {
+    expect(DocumentIdSchema.safeParse('000.000.000-00').success).toBe(false);
+    expect(LoginDocumentIdSchema.parse('000.000.000-00')).toBe('00000000000');
   });
 });

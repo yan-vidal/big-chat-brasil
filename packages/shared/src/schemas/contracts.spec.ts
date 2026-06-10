@@ -35,6 +35,20 @@ describe('auth and onboarding contracts', () => {
     });
   });
 
+  it('accepts the reserved admin CPF in auth requests', () => {
+    expect(
+      AuthSessionRequestSchema.parse({
+        documentId: '000.000.000-00',
+        documentType: 'CPF',
+        password: 'Admin@123',
+      }),
+    ).toEqual({
+      documentId: '00000000000',
+      documentType: 'CPF',
+      password: 'Admin@123',
+    });
+  });
+
   it('rejects a mismatched document type', () => {
     expect(
       AuthSessionRequestSchema.safeParse({

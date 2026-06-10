@@ -10,7 +10,8 @@
     "login": "Acesso",
     "onboarding": "Onboarding",
     "conversations": "Conversas",
-    "billing": "Cobrança"
+    "billing": "Cobrança",
+    "admin": "Administração"
   },
   "auth": {
     "kicker": "Identificação",

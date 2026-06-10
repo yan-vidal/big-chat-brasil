@@ -96,8 +96,6 @@ test.describe('integrated chat web', () => {
     page,
   }) => {
     let readCalled = false;
-    let sentPayload: unknown;
-
     await seedChatSession(page);
     await page.route(`${apiBaseUrl}/billing/me`, async (route) => {
       await fulfillJson(route, {
@@ -138,7 +136,6 @@ test.describe('integrated chat web', () => {
       await fulfillJson(route, { conversationId, unreadCount: 0 });
     });
     await page.route(`${apiBaseUrl}/messages`, async (route) => {
-      sentPayload = route.request().postDataJSON();
       await fulfillJson(route, {
         id: sentMessageId,
         status: 'queued',
@@ -158,9 +155,13 @@ test.describe('integrated chat web', () => {
 
     await page.getByLabel('Urgente').check();
     await page.getByLabel('Mensagem').fill('Resolver com prioridade, por favor.');
+    const messageRequest = page.waitForRequest(
+      (request) => request.url() === `${apiBaseUrl}/messages` && request.method() === 'POST',
+    );
     await page.getByRole('button', { name: 'Enviar' }).click();
 
-    expect(sentPayload).toEqual({
+    const request = await messageRequest;
+    expect(request.postDataJSON()).toEqual({
       conversationId,
       content: 'Resolver com prioridade, por favor.',
       priority: 'urgent',

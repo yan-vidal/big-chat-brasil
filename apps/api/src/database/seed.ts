@@ -50,7 +50,7 @@ async function seedAccount(db: Kysely<Database>, account: DemoAccount): Promise<
     .returning(['id'])
     .executeTakeFirstOrThrow();
 
-  if (account.profile.onboardingCompleted) {
+  if (account.role === 'client' && account.profile.onboardingCompleted) {
     await db
       .insertInto('recipients')
       .values({

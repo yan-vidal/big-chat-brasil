@@ -2,6 +2,7 @@ import { sql, type Kysely } from 'kysely';
 import { getDatabaseUrl } from './database.config.js';
 import { createDatabase } from './database.client.js';
 import { migrateToLatest } from './migrate.js';
+import { ADMIN_DOCUMENT_ID } from '@bcb/shared';
 import { DEMO_ACCOUNTS, DEMO_RECIPIENTS } from './seed-data.js';
 import { seedDatabase } from './seed.js';
 import { resetDatabaseForTests } from './testing.js';
@@ -87,12 +88,22 @@ describeDatabase('database migrations and seed', () => {
       .select((eb) => eb.fn.countAll<number>().as('count'))
       .where('accounts.document_id', '=', '11222333000181')
       .executeTakeFirstOrThrow();
+    const adminRecipient = await db
+      .selectFrom('recipients')
+      .innerJoin('client_profiles', 'client_profiles.id', 'recipients.client_profile_id')
+      .innerJoin('accounts', 'accounts.id', 'client_profiles.account_id')
+      .select(['recipients.id'])
+      .where('accounts.document_id', '=', ADMIN_DOCUMENT_ID)
+      .executeTakeFirst();
 
     expect(Number(accountCount.count)).toBe(DEMO_ACCOUNTS.length);
     expect(Number(simulatedRecipientCount.count)).toBe(DEMO_RECIPIENTS.length);
     expect(Number(accountRecipientCount.count)).toBe(
-      DEMO_ACCOUNTS.filter((account) => account.profile.onboardingCompleted).length,
+      DEMO_ACCOUNTS.filter(
+        (account) => account.role === 'client' && account.profile.onboardingCompleted,
+      ).length,
     );
+    expect(adminRecipient).toBeUndefined();
     expect(empresaAbc).toEqual({
       documentId: '11222333000181',
       role: 'client',

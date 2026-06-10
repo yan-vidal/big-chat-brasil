@@ -5,6 +5,8 @@ const FORMATTING_CHARACTERS = /[./\s-]/g;
 const DIGITS_ONLY = /^\d+$/;
 const REPEATED_DIGITS = /^(\d)\1+$/;
 
+export const ADMIN_DOCUMENT_ID = '00000000000';
+
 export function normalizeDocument(value: string): string {
   return value.trim().replace(FORMATTING_CHARACTERS, '');
 }
@@ -85,3 +87,10 @@ export const CnpjSchema = NormalizedDocumentStringSchema.refine(isValidCnpj, {
 });
 
 export const DocumentIdSchema = z.union([CpfSchema, CnpjSchema]);
+export const AdminDocumentIdSchema = NormalizedDocumentStringSchema.refine(
+  (value) => value === ADMIN_DOCUMENT_ID,
+  {
+    message: 'CPF de administrador inválido',
+  },
+);
+export const LoginDocumentIdSchema = z.union([DocumentIdSchema, AdminDocumentIdSchema]);

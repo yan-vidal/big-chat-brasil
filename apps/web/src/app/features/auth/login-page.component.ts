@@ -116,9 +116,7 @@ export class LoginPageComponent {
     try {
       const session = await firstValueFrom(this.authApi.createSession(request));
       this.sessionStore.setSession(session);
-      await this.router.navigateByUrl(
-        session.requiresOnboarding ? '/onboarding' : '/conversations',
-      );
+      await this.router.navigateByUrl(this.redirectPathFor(session));
     } catch {
       this.errorKey.set('auth.errors.requestFailed');
     } finally {
@@ -140,5 +138,16 @@ export class LoginPageComponent {
     } catch {
       return null;
     }
+  }
+
+  private redirectPathFor(session: {
+    client: { role: string };
+    requiresOnboarding: boolean;
+  }): string {
+    if (session.client.role === 'admin') {
+      return '/admin';
+    }
+
+    return session.requiresOnboarding ? '/onboarding' : '/conversations';
   }
 }

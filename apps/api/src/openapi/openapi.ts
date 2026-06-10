@@ -5,7 +5,7 @@ import { OPENAPI_SCHEMAS, schemaRef } from './openapi.schemas.js';
 export const OPENAPI_UI_PATH = 'docs';
 export const OPENAPI_JSON_PATH = 'docs-json';
 
-type HttpMethod = 'get' | 'post';
+type HttpMethod = 'get' | 'post' | 'patch';
 type OperationObject = NonNullable<OpenAPIObject['paths'][string][HttpMethod]>;
 type RequestBodyObject = NonNullable<OperationObject['requestBody']>;
 type ResponseObject = NonNullable<OperationObject['responses'][string]>;
@@ -47,6 +47,103 @@ const OPENAPI_OPERATIONS: Record<string, Partial<Record<HttpMethod, OperationMet
       responses: {
         200: jsonResponse('Cliente autenticado', schemaRef('authenticatedClient')),
         401: jsonResponse('Sessão inválida', schemaRef('apiError')),
+      },
+    },
+  },
+  '/admin/clients': {
+    get: {
+      tags: ['Admin'],
+      summary: 'Lista contas administráveis',
+      description: 'Retorna clientes e a conta admin inicial. Campos de role são somente leitura.',
+      security: bearerSecurity,
+      responses: {
+        200: jsonArrayResponse('Contas encontradas', schemaRef('adminClientResponse')),
+        401: jsonResponse('Sessão inválida', schemaRef('apiError')),
+        403: jsonResponse('Acesso restrito a administradores', schemaRef('apiError')),
+      },
+    },
+    post: {
+      tags: ['Admin'],
+      summary: 'Cria cliente pelo painel administrativo',
+      description:
+        'Cria somente contas com role client. Qualquer campo role no payload é rejeitado.',
+      security: bearerSecurity,
+      requestBody: jsonRequest(schemaRef('adminCreateClientRequest')),
+      responses: {
+        201: jsonResponse('Cliente criado', schemaRef('adminClientResponse')),
+        400: jsonResponse('Payload inválido', schemaRef('apiError')),
+        401: jsonResponse('Sessão inválida', schemaRef('apiError')),
+        403: jsonResponse('Acesso restrito a administradores', schemaRef('apiError')),
+        409: jsonResponse('Documento já cadastrado ou reservado', schemaRef('apiError')),
+      },
+    },
+  },
+  '/admin/clients/{id}/status': {
+    patch: {
+      tags: ['Admin'],
+      summary: 'Ativa ou inativa cliente',
+      description: 'Não permite alterar a conta admin inicial.',
+      security: bearerSecurity,
+      parameters: [pathIdParameter('id', 'ID do cliente')],
+      requestBody: jsonRequest(schemaRef('adminUpdateClientStatusRequest')),
+      responses: {
+        200: jsonResponse('Status atualizado', schemaRef('adminClientResponse')),
+        400: jsonResponse('ID ou payload inválido', schemaRef('apiError')),
+        401: jsonResponse('Sessão inválida', schemaRef('apiError')),
+        403: jsonResponse('Acesso restrito a administradores', schemaRef('apiError')),
+        404: jsonResponse('Cliente não encontrado', schemaRef('apiError')),
+        409: jsonResponse('Conta admin imutável', schemaRef('apiError')),
+      },
+    },
+  },
+  '/admin/clients/{id}/credits': {
+    post: {
+      tags: ['Admin'],
+      summary: 'Adiciona crédito a cliente pré-pago',
+      security: bearerSecurity,
+      parameters: [pathIdParameter('id', 'ID do cliente')],
+      requestBody: jsonRequest(schemaRef('adminAddCreditRequest')),
+      responses: {
+        201: jsonResponse('Crédito adicionado', schemaRef('adminClientResponse')),
+        400: jsonResponse('ID ou payload inválido', schemaRef('apiError')),
+        401: jsonResponse('Sessão inválida', schemaRef('apiError')),
+        403: jsonResponse('Acesso restrito a administradores', schemaRef('apiError')),
+        404: jsonResponse('Cliente não encontrado', schemaRef('apiError')),
+        409: jsonResponse('Cliente não é pré-pago ou conta admin imutável', schemaRef('apiError')),
+      },
+    },
+  },
+  '/admin/clients/{id}/limit': {
+    patch: {
+      tags: ['Admin'],
+      summary: 'Atualiza limite mensal de cliente pós-pago',
+      security: bearerSecurity,
+      parameters: [pathIdParameter('id', 'ID do cliente')],
+      requestBody: jsonRequest(schemaRef('adminUpdateLimitRequest')),
+      responses: {
+        200: jsonResponse('Limite atualizado', schemaRef('adminClientResponse')),
+        400: jsonResponse('ID ou payload inválido', schemaRef('apiError')),
+        401: jsonResponse('Sessão inválida', schemaRef('apiError')),
+        403: jsonResponse('Acesso restrito a administradores', schemaRef('apiError')),
+        404: jsonResponse('Cliente não encontrado', schemaRef('apiError')),
+        409: jsonResponse('Cliente não é pós-pago ou conta admin imutável', schemaRef('apiError')),
+      },
+    },
+  },
+  '/admin/clients/{id}/plan': {
+    post: {
+      tags: ['Admin'],
+      summary: 'Converte cliente entre pré-pago e pós-pago',
+      security: bearerSecurity,
+      parameters: [pathIdParameter('id', 'ID do cliente')],
+      requestBody: jsonRequest(schemaRef('adminConvertPlanRequest')),
+      responses: {
+        201: jsonResponse('Plano convertido', schemaRef('adminClientResponse')),
+        400: jsonResponse('ID ou payload inválido', schemaRef('apiError')),
+        401: jsonResponse('Sessão inválida', schemaRef('apiError')),
+        403: jsonResponse('Acesso restrito a administradores', schemaRef('apiError')),
+        404: jsonResponse('Cliente não encontrado', schemaRef('apiError')),
+        409: jsonResponse('Conta admin imutável', schemaRef('apiError')),
       },
     },
   },
@@ -243,12 +340,13 @@ export function createOpenApiDocument(app: INestApplication): OpenAPIObject {
   const config = new DocumentBuilder()
     .setTitle('Big Chat Brasil API')
     .setDescription(
-      'API REST do desafio Big Chat Brasil: auth, billing, conversas, mensagens e fila.',
+      'API REST do desafio Big Chat Brasil: auth, billing, conversas, mensagens, fila e administração.',
     )
     .setVersion('0.1.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'bearer')
     .addTag('Health')
     .addTag('Auth')
+    .addTag('Admin')
     .addTag('Billing')
     .addTag('Recipients')
     .addTag('Conversations')

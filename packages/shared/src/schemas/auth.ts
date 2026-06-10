@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { DocumentIdSchema, inferDocumentType } from '../documents.js';
+import { LoginDocumentIdSchema, inferDocumentType } from '../documents.js';
 import { DocumentTypeSchema, PlanTypeSchema, RoleSchema } from '../enums.js';
 import { IdSchema, MoneyCentsSchema } from './common.js';
 
 export const JwtPayloadSchema = z.object({
   sub: IdSchema,
-  documentId: DocumentIdSchema,
+  documentId: LoginDocumentIdSchema,
   documentType: DocumentTypeSchema,
   role: RoleSchema,
   clientId: IdSchema.optional(),
@@ -14,16 +14,26 @@ export const JwtPayloadSchema = z.object({
 
 export const AuthSessionRequestSchema = z
   .object({
-    documentId: DocumentIdSchema,
+    documentId: LoginDocumentIdSchema,
     documentType: DocumentTypeSchema,
     password: z.string().min(1).max(72),
   })
   .superRefine((value, context) => {
-    if (inferDocumentType(value.documentId) !== value.documentType) {
+    try {
+      if (inferDocumentType(value.documentId) === value.documentType) {
+        return;
+      }
+
       context.addIssue({
         code: 'custom',
         path: ['documentType'],
         message: 'Tipo de documento não corresponde ao documento informado',
+      });
+    } catch {
+      context.addIssue({
+        code: 'custom',
+        path: ['documentId'],
+        message: 'Documento deve ter 11 ou 14 dígitos',
       });
     }
   });
@@ -31,7 +41,7 @@ export const AuthSessionRequestSchema = z
 export const AuthenticatedClientSchema = z.object({
   id: IdSchema,
   name: z.string().min(1).nullable(),
-  documentId: DocumentIdSchema,
+  documentId: LoginDocumentIdSchema,
   documentType: DocumentTypeSchema,
   role: RoleSchema,
   planType: PlanTypeSchema.nullable(),

@@ -6,6 +6,7 @@ import type {
   Role,
   SenderType,
 } from '@bcb/shared';
+import { ADMIN_DOCUMENT_ID as DEFAULT_ADMIN_DOCUMENT_ID } from '@bcb/shared';
 
 export type DemoAccount = {
   readonly key: string;
@@ -48,13 +49,20 @@ export type DemoConversation = {
 };
 
 const usageMonth = new Date().toISOString().slice(0, 7);
+const DEFAULT_ADMIN_PASSWORD = 'Admin@123';
+
+export function getSeedAdminPassword(): string {
+  const password = process.env.BCB_ADMIN_PASSWORD?.trim();
+
+  return password && password.length > 0 ? password : DEFAULT_ADMIN_PASSWORD;
+}
 
 export const DEMO_ACCOUNTS: readonly DemoAccount[] = [
   {
     key: 'admin',
-    documentId: '52998224725',
+    documentId: DEFAULT_ADMIN_DOCUMENT_ID,
     documentType: 'CPF',
-    password: 'Admin@123',
+    password: getSeedAdminPassword(),
     role: 'admin',
     active: true,
     profile: {
