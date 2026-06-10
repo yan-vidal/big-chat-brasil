@@ -137,6 +137,17 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - TDD observado: Playwright falhou primeiro contra os placeholders (`Maria Oliveira`/`Saldo R$ 25,00` ausentes); depois houve falha real porque mocks `**/conversations` interceptavam a navegação SPA e devolviam JSON, corrigida restringindo mocks ao host `http://localhost:3000`; um teste adicional falhou por i18n fixo e foi corrigido migrando textos para `pt-BR.json`/`en-US.json`; outro falhou por badge realtime ausente e foi corrigido assinando `conversation.updated`.
   - Checagem visual manual: screenshots em `/tmp/bcb-sprint9-conversations-desktop.png` e `/tmp/bcb-sprint9-chat-mobile.png` renderizaram lista desktop e chat mobile sem sobreposição, com saldo, badges, bolhas, status, prioridade urgente e composer visíveis.
   - Gates verdes: `pnpm --filter @bcb/shared build && pnpm --filter @bcb/web build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (11 testes), `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm exec prettier --check ...` nos arquivos tocados.
+- **Sprint 10 - E2E, Docker e documentação final implementada e verificada** (`test: add e2e coverage for main chat flow`):
+  - Plano detalhado: `docs/superpowers/plans/2026-06-10-sprint-10-e2e-docker-docs.md`.
+  - Docker finalizado com `Dockerfile` multi-target (`api` e `web`) e `.dockerignore`; Compose agora builda imagens em vez de usar bind mount/dev server.
+  - API Docker roda `pnpm --filter @bcb/api db:migrate`, `pnpm --filter @bcb/api db:seed` e depois `pnpm --filter @bcb/api start`; web Docker serve `dist/apps/web/browser` via `apps/web/e2e/static-server.mjs` com `WEB_HOST=0.0.0.0`.
+  - Portas publicadas do Compose agora são parametrizáveis: `API_PUBLISHED_PORT`, `WEB_PUBLISHED_PORT`, `DB_PUBLISHED_PORT`. Defaults continuam `3000`, `4200`, `5432`.
+  - Novo e2e full-stack: `apps/web/e2e/full-stack.spec.ts` + `apps/web/playwright.fullstack.config.ts`, script raiz `pnpm test:e2e:fullstack`. Ele loga com a Empresa ABC real seedada, abre Maria Oliveira, envia mensagem urgente e espera status/feedback do simulador sem mocks REST.
+  - `apps/web/playwright.config.ts` ignora `full-stack.spec.ts`, mantendo o e2e padrão como suíte mockada/determinística.
+  - `README.md` virou README de entrega: execução Docker, credenciais demo, funcionalidades, stack, comandos de teste, endpoints, decisões, premissas e limitações.
+  - TDD/depuração observados: full-stack falhou primeiro por conexão recusada; Docker build falhou por falta de `angular.json`/`postcss.config.json` no build context; Docker up local falhou porque outro container ocupava host `3000`; full-stack falhou com CORS por `127.0.0.1` versus `localhost`; e2e padrão falhou por coletar o spec full-stack. Todas as causas foram corrigidas na origem.
+  - Verificação Docker: `docker compose config` passou; `docker compose build` passou; ambiente limpo com `docker compose down --volumes --remove-orphans` seguido de `API_PUBLISHED_PORT=3002 docker compose up --detach db api web` subiu banco healthy, API e web; logs da API confirmaram migrate, seed e start.
+  - Gates verdes: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable E2E_API_BASE_URL=http://localhost:3002 pnpm test:e2e:fullstack` (1 teste), `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (11 testes), `pnpm format:check`, `docker compose config`, `docker compose build`.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -151,9 +162,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 9 e criar o commit sugerido `feat(web): add integrated chat experience`.
-3. Iniciar a **Sprint 10 - E2E, Docker e documentação final**.
-4. Antes de codar Sprint 10, gerar plano detalhado em `docs/superpowers/plans/`; incluir fluxo e2e completo contra stack real, Docker com `db:migrate` + `db:seed` automático, README final e documentação de cortes.
+2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 10 e criar o commit sugerido `test: add e2e coverage for main chat flow`.
+3. Com Sprint 10 commitada, fazer uma revisão final de entrega: checar README do ponto de vista do avaliador, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
+4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado.
 
 ## Skills sugeridas para o próximo agente
 
@@ -190,8 +201,10 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - O simulador de destinatário fica ligado por padrão; em testes que afirmam estados finais da fila, setar `RECIPIENT_SIMULATOR_ENABLED=false`.
 - A shell web agora usa sessão real em `bcb.session`. Não voltar para as chaves provisórias `bcb.session.active`/`bcb.onboarding.completed`.
 - `apps/web` ainda não tem runner unitário real; `pnpm test` segue placeholder. A cobertura efetiva das Sprints 7/8/9 está em Playwright visual/rotas/preferências/fluxos HTTP mockados e eventos realtime injetados.
-- O `ApiClientService` usa `http://localhost:3000` por padrão; para ambientes servidos por proxy/reverse proxy, ajustar via `localStorage['bcb.api.baseUrl']` ou consolidar isso na Sprint 10.
+- O `ApiClientService` usa `http://localhost:3000` por padrão; para ambientes servidos por proxy/reverse proxy, ajustar via `localStorage['bcb.api.baseUrl']` conforme documentado no README.
 - Em Playwright web, mocks de API devem mirar `http://localhost:3000/...`; padrões amplos como `**/conversations` interceptam a navegação SPA do servidor estático e retornam JSON como documento.
+- O e2e full-stack deve rodar pelo script/config dedicado (`pnpm test:e2e:fullstack`); não colocar `full-stack.spec.ts` de volta na suíte mockada padrão.
+- Nesta máquina, a porta host `3000` estava ocupada pelo container externo `pokedex_api`; a validação Docker local usou `API_PUBLISHED_PORT=3002` e `E2E_API_BASE_URL=http://localhost:3002`. Em uma máquina limpa, o README usa o default `3000`.
 
 ## Pendências que dependem do Yan
 

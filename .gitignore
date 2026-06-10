@@ -10,4 +10,5 @@ coverage/
 npm-debug.log*
 pnpm-debug.log*
 playwright-report/
+playwright-report-fullstack/
 test-results/

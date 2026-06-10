@@ -7,7 +7,8 @@
     "lint": "eslint .",
     "start": "ng serve --host 0.0.0.0",
     "test": "echo \"@bcb/web component tests start in Sprint 7\"",
-    "test:e2e": "playwright test -c playwright.config.ts"
+    "test:e2e": "playwright test -c playwright.config.ts",
+    "test:e2e:fullstack": "playwright test -c playwright.fullstack.config.ts"
   },
   "dependencies": {
     "@angular/common": "22.0.0",

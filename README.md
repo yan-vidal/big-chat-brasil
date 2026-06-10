@@ -1,89 +1,156 @@
-# Teste Técnico - Big Chat Brasil (BCB)
+# Big Chat Brasil
 
-Olá candidato(a), seja bem-vindo ao teste técnico BCB - Big Chat Brasil.
+Implementação fullstack do desafio técnico BCB: autenticação por CPF/CNPJ, onboarding de plano, cobrança pré/pós-paga, fila de mensagens com prioridade, WebSocket com simulador de destinatário e interface Angular de chat.
 
-**Prazo:** Até nossa call marcada para DATA+HORA  
-**Entrega:** Repositório público no GitHub (envie o link por e-mail ou WhatsApp)
+## Como Rodar
 
-## Resumo do Desafio
+Requisitos:
 
-Desenvolva a plataforma "Big Chat Brasil", um sistema simples para envio e visualização de mensagens entre empresas e seus clientes:
+- Docker com Docker Compose.
+- Portas livres por padrão: `3000` API, `4200` web, `5432` Postgres.
 
-| Perfil | Desafio Principal | Foco da Avaliação |
-|--------|-------------------|-------------------|
-| **Backend** | [Sistema de filas para chat](./docs/backend.md) | Estruturas de dados, filas de prioridade, concorrência |
-| **Frontend** | [Interface de chat](./docs/frontend.md) | UI/UX, interação, experiência do usuário |
-| **Fullstack** | [Aplicação básica de chat](./docs/fullstack.md) | Integração entre camadas, fluxo de comunicação |
+```bash
+docker compose up --build
+```
 
-Escolha o perfil que melhor se adequa às suas habilidades e acesse a documentação específica para seu perfil clicando no link correspondente.
+Depois acesse:
 
-## Sobre o Projeto
+- Web: `http://localhost:4200`
+- API healthcheck: `http://localhost:3000/health`
 
-O **BCB – Big Chat Brasil** é uma plataforma de chat que permite a empresas conversarem com seus clientes através de uma interface intuitiva, oferecendo:
-- Chat para comunicação entre empresa e clientes
-- Sistema de pagamento por mensagem (pré-pago e pós-pago)
-- Dois tipos de prioridade de mensagens (normal e urgente)
-- Interface interativa similar a aplicativos populares de mensagens
+Na inicialização, a API executa automaticamente `db:migrate` e `db:seed`. Isso deixa o banco pronto para demonstração sem passos manuais.
 
-[Leia mais sobre as regras de negócio](./docs/regras-negocio.md)
+Para encerrar e apagar o banco local:
 
-## Estrutura da Documentação
+```bash
+docker compose down --volumes
+```
 
-**Comece aqui**: Escolha o perfil que melhor se adequa a você e leia a documentação correspondente:
+Se a porta `3000` já estiver ocupada, a API pode ser publicada em outra porta:
 
-| Perfil | Documento Principal | Conteúdo |
-|--------|---------------------|----------|
-| **Backend** | [Guia Backend](./docs/backend.md) | Sistema de filas, APIs, regras de processamento |
-| **Frontend** | [Guia Frontend](./docs/frontend.md) | Interface de chat, componentes, comunicação |
-| **Fullstack** | [Guia Fullstack](./docs/fullstack.md) | Integração entre camadas, fluxo completo |
+```bash
+API_PUBLISHED_PORT=3002 docker compose up --build
+```
 
-**Documentos de Apoio**:
-- [Regras de Negócio](./docs/regras-negocio.md) - Detalhamento das regras do sistema
-- [Requisitos Técnicos](./docs/requisitos-tecnicos.md) - Tecnologias, entregas e requisitos mínimos
-- [Dicas e FAQ](./docs/dicas.md) - Recomendações e perguntas frequentes
+Nesse caso, no navegador, antes do login, execute no console:
 
-## O Que Entregar (Resumo)
+```js
+localStorage.setItem('bcb.api.baseUrl', 'http://localhost:3002');
+location.reload();
+```
 
-Para todos os perfis:
-- Repositório Git com a solução
-- Docker-compose para executar o projeto (fortemente recomendado)
-- README.md com:
-  - Tecnologias utilizadas
-  - Instruções de instalação/execução
-  - Decisões técnicas e limitações
-  - Funcionalidades implementadas
+## Credenciais Demo
 
-Cada perfil tem requisitos mínimos específicos detalhados no documento correspondente.
+| Perfil              | Documento        | Tipo | Senha       | Observação                   |
+| ------------------- | ---------------- | ---- | ----------- | ---------------------------- |
+| Admin               | `52998224725`    | CPF  | `Admin@123` | Acesso para endpoints admin  |
+| Empresa ABC         | `11222333000181` | CNPJ | `Demo@123`  | Pré-pago, saldo inicial R$25 |
+| Pré-pago sem saldo  | `11144477735`    | CPF  | `Demo@123`  | Exercita saldo insuficiente  |
+| Pós-pago com limite | `11444777000161` | CNPJ | `Demo@123`  | Limite mensal R$100          |
+| Pós-pago no limite  | `12345678909`    | CPF  | `Demo@123`  | Exercita limite insuficiente |
 
-Veja os [requisitos técnicos completos](./docs/requisitos-tecnicos.md) para mais detalhes.
+Também é possível entrar com um CPF/CNPJ válido novo e senha qualquer. A conta é criada automaticamente e segue para o onboarding.
 
-## Critérios de Avaliação
+## Funcionalidades
 
-Avaliaremos principalmente:
-1. **Qualidade e organização do código**
-2. **Implementação correta das regras de negócio**
-3. **Execução do desafio principal do seu perfil**
-4. **Decisões técnicas e arquiteturais**
+- Login por documento e senha, com validação de CPF/CNPJ.
+- Auto-registro de novo cliente.
+- Onboarding pré-pago com PIX simulado e pós-pago com limite mensal.
+- Listagem de conversas, busca, badges de não lidas e criação de nova conversa.
+- Tela de conversa com histórico, bolhas, status, prioridade normal/urgente e composer.
+- Cobrança por mensagem: normal `R$0,25`, urgente `R$0,50`.
+- Fila em memória com prioridade urgente e anti-starvation.
+- Socket.IO autenticado para status, novas mensagens, atualização de conversa e digitação.
+- Simulador de destinatário que marca mensagens como lidas, mostra digitação e responde.
 
-Cada documento específico de perfil contém critérios detalhados de avaliação, com pesos e exemplos para diferentes níveis de complexidade de implementação.
+## Stack
 
-## Preparação para a Entrevista de Live-Coding
+- Node.js `22`
+- pnpm `10.33`
+- TypeScript `6.0`
+- NestJS `11`
+- PostgreSQL `17`
+- Kysely `0.29`
+- Angular `22`
+- Tailwind CSS `4`
+- Socket.IO `4`
+- Jest, Vitest e Playwright
 
-Após a entrega do teste, teremos uma entrevista de live-coding onde:
-- Você apresentará sua solução e abordagem
-- Discutiremos decisões técnicas e tradeoffs
-- Faremos pequenas modificações no código para avaliar sua adaptabilidade
-- Esclareceremos dúvidas sobre a implementação
+## Comandos de Desenvolvimento
 
-**Dica**: Esteja preparado para explicar suas escolhas e demonstrar seu raciocínio. Revise seu código antes da entrevista.
+Instalação local:
 
-## Importante
+```bash
+pnpm install
+```
 
-- **Prazo flexível**: Informe-nos se precisar de mais tempo
-- **Priorize qualidade**: Uma solução parcial bem estruturada é melhor que uma solução completa desorganizada
-- **Documente suas decisões**: Explique o que foi implementado e o que ficou como trabalho futuro
-- **Pergunte se tiver dúvidas**: Estamos disponíveis para esclarecer qualquer aspecto do teste
+Gates principais:
 
-Para uma lista completa de perguntas frequentes, consulte o [FAQ](./docs/dicas.md#faq---perguntas-frequentes).
+```bash
+pnpm lint
+pnpm test
+pnpm build
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e
+```
 
-Boa sorte!
+Teste full-stack contra a stack Docker:
+
+```bash
+docker compose up --build
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack
+```
+
+Se a API estiver publicada em porta alternativa:
+
+```bash
+E2E_API_BASE_URL=http://localhost:3002 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack
+```
+
+Testes de banco da API, com Postgres disponível:
+
+```bash
+pnpm --filter @bcb/api test:db
+```
+
+## Endpoints Principais
+
+- `POST /auth/session`
+- `GET /auth/me`
+- `POST /billing/onboarding`
+- `POST /billing/pix-intents`
+- `POST /billing/pix-intents/:id/confirm`
+- `GET /billing/me`
+- `GET /recipients`
+- `GET /conversations`
+- `GET /conversations/:id`
+- `GET /conversations/:id/messages`
+- `POST /conversations/:id/read`
+- `POST /messages`
+- `GET /messages/:id/status`
+- `GET /queue/status`
+- Socket.IO namespace `/chat`
+
+## Decisões e Premissas
+
+- Kysely foi escolhido para manter SQL explícito e controle de transações.
+- Dinheiro é sempre armazenado em centavos inteiros.
+- A fila é em memória, com recuperação de mensagens `queued`/`processing` no boot.
+- O reset mensal pós-pago é preguiçoso, feito no uso.
+- O seed roda no start da API em Docker para privilegiar demonstração reprodutível. Reiniciar a API reseta os dados demo.
+- O frontend usa `http://localhost:3000` como API padrão. Ambientes com proxy podem sobrescrever por `localStorage['bcb.api.baseUrl']`.
+- O WebSocket usa JWT no handshake e salas por cliente/conversa.
+
+## Limitações Conhecidas
+
+- Sem paginação real de mensagens; o MVP retorna as últimas mensagens da conversa.
+- Sem broker externo para fila; Redis/RabbitMQ seria o próximo passo para produção.
+- Sem Swagger/OpenAPI.
+- `apps/web` ainda não tem runner unitário/component real; a cobertura de frontend está nos testes Playwright.
+- O servidor web Docker usa um servidor estático Node simples, não Nginx.
+
+## Documentação de Apoio
+
+- Plano mestre: [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
+- Arquitetura: [`docs/architecture-plan.md`](./docs/architecture-plan.md)
+- Estratégia de testes: [`docs/testing-strategy.md`](./docs/testing-strategy.md)
+- Especificação original do desafio: [`docs/fullstack.md`](./docs/fullstack.md)

@@ -8,6 +8,7 @@ const projectRoot = resolve(__dirname, '..');
 const browserOutput = resolve(projectRoot, '../../dist/apps/web/browser');
 const portArgIndex = process.argv.indexOf('--port');
 const port = Number(portArgIndex >= 0 ? process.argv[portArgIndex + 1] : 4200);
+const host = process.env.WEB_HOST ?? '127.0.0.1';
 
 const contentTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
@@ -50,6 +51,6 @@ const server = createServer((request, response) => {
   createReadStream(filePath).pipe(response);
 });
 
-server.listen(port, '127.0.0.1', () => {
-  console.log(`Serving ${browserOutput} at http://127.0.0.1:${port}`);
+server.listen(port, host, () => {
+  console.log(`Serving ${browserOutput} at http://${host}:${port}`);
 });

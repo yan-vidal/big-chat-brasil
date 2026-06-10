@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: bcb
       POSTGRES_DB: bcb
     ports:
-      - '5432:5432'
+      - '${DB_PUBLISHED_PORT:-5432}:5432'
     volumes:
       - bcb-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -16,13 +16,9 @@ services:
       retries: 10
 
   api:
-    image: node:22-slim
-    working_dir: /workspace
-    command: >
-      sh -c "corepack enable &&
-      corepack prepare pnpm@10.33.0 --activate &&
-      pnpm install --frozen-lockfile &&
-      pnpm --filter @bcb/api start:dev"
+    build:
+      context: .
+      target: api
     environment:
       DATABASE_URL: postgres://bcb:bcb@db:5432/bcb
       JWT_SECRET: dev-secret-change-me
@@ -35,27 +31,17 @@ services:
       RECIPIENT_SIMULATOR_READ_DELAY_MS: 1500
       RECIPIENT_SIMULATOR_TYPING_MS: 2000
     ports:
-      - '3000:3000'
-    volumes:
-      - .:/workspace
+      - '${API_PUBLISHED_PORT:-3000}:3000'
     depends_on:
       db:
         condition: service_healthy
 
   web:
-    image: node:22-slim
-    working_dir: /workspace
-    command: >
-      sh -c "corepack enable &&
-      corepack prepare pnpm@10.33.0 --activate &&
-      pnpm install --frozen-lockfile &&
-      pnpm --filter @bcb/web start"
-    environment:
-      API_BASE_URL: http://localhost:3000
+    build:
+      context: .
+      target: web
     ports:
-      - '4200:4200'
-    volumes:
-      - .:/workspace
+      - '${WEB_PUBLISHED_PORT:-4200}:4200'
     depends_on:
       - api
 
