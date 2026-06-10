@@ -251,6 +251,14 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - RED confirmado: o spec falhou primeiro porque `Conversas` continuava visível no login e após logout; depois passou com 5 testes.
   - Gates verdes: `pnpm format:check`, `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (19 testes).
   - Docker local atualizado: `docker compose build web` e `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; os testes focados de login/logout passaram contra `localhost:4200` com config Playwright temporária sem `webServer`, removida após a validação.
+- **Hotfix web - criação admin limpa formulário e evidencia cliente criado**:
+  - Pedido do Yan: ao criar cliente pelo admin, limpar inputs e rolar a tela automaticamente para evidenciar o novo cliente; também havia dúvida sobre saldo/limite nos formulários.
+  - `apps/web/src/app/features/admin/admin-page.component.ts` agora reseta o formulário `Novo cliente` para os defaults após sucesso, destaca a linha criada com ring acessível em tema claro/escuro e chama `scrollIntoView()` nela.
+  - Labels financeiras do painel admin foram explicitadas como centavos e limites mensais: `Saldo inicial (centavos)`, `Limite mensal inicial (centavos)`, `Crédito pré-pago (centavos)`, `Novo limite pós-pago (centavos)`, `Saldo ao converter para pré-pago (centavos)` e `Limite mensal ao converter para pós-pago (centavos)`.
+  - `apps/web/e2e/admin.spec.ts` cobre o reset dos campos, o scroll (`window.scrollY > 0`) e a linha criada dentro do viewport.
+  - RED confirmado: o spec falhou primeiro porque `Documento do novo cliente` continuava preenchido; depois passou com 3 testes.
+  - Gates verdes: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/admin.spec.ts` (3 testes), `pnpm format:check`, `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (19 testes).
+  - Docker local atualizado: `docker compose build web` e `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; o teste admin focado passou contra `localhost:4200` com config Playwright temporária sem `webServer`, removida após a validação.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -265,7 +273,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Confirmar se o hotfix de navegação aparece no log como `fix(web): hide protected nav while logged out`; se não aparecer, revisar o diff deste bloco e commitar antes de seguir.
+2. O hotfix admin já está no log como `fix(web): improve admin client creation`; não há diff pendente desse bloco.
 3. Fazer uma revisão final de entrega: checar README e `docs/challenge-compliance.md` do ponto de vista do avaliador, validar Docker/full-stack em ambiente limpo, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
 4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado. Se quiser maximizar aderência literal aos endpoints sugeridos, o próximo bloco opcional é adicionar aliases `/auth`, `/clients` e `GET /messages` sem mudar o fluxo principal.
 

@@ -138,6 +138,7 @@ test.describe('admin console', () => {
 
   test('lists clients and sends management actions without a role payload', async ({ page }) => {
     const requests: Array<{ url: string; body: unknown }> = [];
+    await page.setViewportSize({ width: 900, height: 520 });
     await seedSession(page, adminSession);
     await page.route('**/admin/clients', async (route) => {
       if (route.request().method() === 'GET') {
@@ -188,8 +189,16 @@ test.describe('admin console', () => {
     await page.getByLabel('Senha do novo cliente').fill('Client@123');
     await page.getByLabel('Nome do novo cliente').fill('Cliente Novo');
     await page.getByLabel('Saldo inicial').fill('1000');
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.getByRole('button', { name: 'Criar cliente' }).click();
     await expect(page.getByText('Cliente criado')).toBeVisible();
+    await expect(page.getByLabel('Documento do novo cliente')).toHaveValue('');
+    await expect(page.getByLabel('Senha do novo cliente')).toHaveValue('');
+    await expect(page.getByLabel('Nome do novo cliente')).toHaveValue('');
+    await expect(page.getByLabel('Saldo inicial')).toHaveValue('0');
+    await expect(page.getByLabel('Limite mensal inicial')).toHaveValue('10000');
+    await expect(page.getByRole('row', { name: /Cliente Novo.*52998224725/ })).toBeInViewport();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 
     await page.getByLabel('Crédito pré-pago').fill('1500');
     await page.getByRole('button', { name: 'Adicionar crédito' }).click();
@@ -208,7 +217,7 @@ test.describe('admin console', () => {
 
     await page.getByLabel('Cliente para converter').selectOption(prepaidClientId);
     await page.getByLabel('Novo plano').selectOption('postpaid');
-    await page.getByLabel('Limite na conversão').fill('30000');
+    await page.getByLabel('Limite mensal ao converter para pós-pago').fill('30000');
     await page.getByRole('button', { name: 'Converter plano' }).click();
     await expect(page.getByText('Plano convertido')).toBeVisible();
 

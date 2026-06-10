@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   inferDocumentType,
@@ -82,7 +82,7 @@ import { AdminApiService } from './admin-api.service';
             </select>
           </label>
           <label class="grid gap-1 text-sm font-medium" for="admin-initial-balance">
-            Saldo inicial
+            Saldo inicial (centavos)
             <input
               id="admin-initial-balance"
               type="number"
@@ -92,7 +92,7 @@ import { AdminApiService } from './admin-api.service';
             />
           </label>
           <label class="grid gap-1 text-sm font-medium" for="admin-initial-limit">
-            Limite inicial
+            Limite mensal inicial (centavos)
             <input
               id="admin-initial-limit"
               type="number"
@@ -129,7 +129,7 @@ import { AdminApiService } from './admin-api.service';
               </select>
             </label>
             <label class="grid gap-1 text-sm font-medium" for="admin-credit">
-              Crédito pré-pago
+              Crédito pré-pago (centavos)
               <input
                 id="admin-credit"
                 type="number"
@@ -160,7 +160,7 @@ import { AdminApiService } from './admin-api.service';
               </select>
             </label>
             <label class="grid gap-1 text-sm font-medium" for="admin-limit">
-              Novo limite pós-pago
+              Novo limite pós-pago (centavos)
               <input
                 id="admin-limit"
                 type="number"
@@ -202,7 +202,7 @@ import { AdminApiService } from './admin-api.service';
               </select>
             </label>
             <label class="grid gap-1 text-sm font-medium" for="admin-convert-balance">
-              Saldo na conversão
+              Saldo ao converter para pré-pago (centavos)
               <input
                 id="admin-convert-balance"
                 type="number"
@@ -212,7 +212,7 @@ import { AdminApiService } from './admin-api.service';
               />
             </label>
             <label class="grid gap-1 text-sm font-medium" for="admin-convert-limit">
-              Limite na conversão
+              Limite mensal ao converter para pós-pago (centavos)
               <input
                 id="admin-convert-limit"
                 type="number"
@@ -248,7 +248,13 @@ import { AdminApiService } from './admin-api.service';
           </thead>
           <tbody>
             @for (client of clients(); track client.id) {
-              <tr class="border-t border-slate-200 dark:border-slate-800">
+              <tr
+                class="border-t border-slate-200 transition-colors dark:border-slate-800"
+                [attr.data-client-id]="client.id"
+                [class.ring-2]="highlightedClientId() === client.id"
+                [class.ring-inset]="highlightedClientId() === client.id"
+                [class.ring-emerald-500]="highlightedClientId() === client.id"
+              >
                 <td class="px-3 py-2 font-medium">{{ client.name }}</td>
                 <td class="px-3 py-2">{{ client.documentId }}</td>
                 <td class="px-3 py-2">{{ client.role }}</td>
@@ -279,10 +285,12 @@ import { AdminApiService } from './admin-api.service';
 export class AdminPageComponent implements OnInit {
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly adminApi = inject(AdminApiService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly clients = signal<readonly AdminClientResponse[]>([]);
   protected readonly feedback = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
+  protected readonly highlightedClientId = signal<string | null>(null);
   protected readonly manageableClients = computed(() =>
     this.clients().filter((client) => client.role === 'client'),
   );
@@ -346,6 +354,8 @@ export class AdminPageComponent implements OnInit {
             };
       const client = await firstValueFrom(this.adminApi.createClient(request));
       this.replaceClient(client);
+      this.resetCreateForm();
+      this.highlightAndScrollToClient(client.id);
       this.feedback.set('Cliente criado');
     } catch {
       this.error.set('Não foi possível criar o cliente');
@@ -470,6 +480,27 @@ export class AdminPageComponent implements OnInit {
   private resetMessages(): void {
     this.feedback.set(null);
     this.error.set(null);
+  }
+
+  private resetCreateForm(): void {
+    this.createForm.reset({
+      documentId: '',
+      password: '',
+      name: '',
+      planType: 'prepaid',
+      initialBalanceCents: 0,
+      monthlyLimitCents: 10000,
+    });
+  }
+
+  private highlightAndScrollToClient(clientId: string): void {
+    this.highlightedClientId.set(clientId);
+
+    setTimeout(() => {
+      this.host.nativeElement
+        .querySelector(`[data-client-id="${clientId}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   }
 
   private formatMoney(value: number): string {
