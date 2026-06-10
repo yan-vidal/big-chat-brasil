@@ -6,7 +6,7 @@
 
 Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fullstack** (avaliação: backend 40%, frontend 40%, integração 20%). A entrega é um repositório público no GitHub que o avaliador roda com `git clone && docker compose up`, seguida de entrevista de live-coding onde o Yan explica decisões e faz pequenas modificações ao vivo. Qualidade > quantidade: corte documentado no README vale mais que feature incompleta.
 
-## Estado atual (2026-06-09)
+## Estado atual (2026-06-10)
 
 - Planejamento completo, revisado e commitado em `fed6f79` (`docs: add implementation, architecture and testing plans`).
 - Branch de implementação atual: `sprint-0-monorepo`. Ela ainda pode ser usada para continuar o trabalho local sem fragmentar contexto, mas o nome já ficou estreito; antes de push/PR público, considerar renomear para `challenge-implementation` ou `bcb-implementation`.
@@ -127,6 +127,16 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - Playwright foi ampliado para 8 testes: validação de documento sem chamada HTTP, login ativo, autoregistro com onboarding, onboarding pré-pago com PIX, onboarding pós-pago, shell, preferências e guards.
   - TDD observado: Playwright falhou primeiro por ausência dos campos `Documento`/`Senha`/`Nome` e por guards lendo chaves antigas; depois 6/8 passaram e as 2 falhas restantes eram seletor ambíguo `CPF`/`CNPJ`.
   - Gates verdes: `pnpm --filter @bcb/web build`, `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (8 testes), checagem visual desktop/mobile por screenshot, `pnpm exec prettier --check ...` nos arquivos tocados.
+- **Sprint 9 - Chat web integrado implementada e verificada** (`feat(web): add integrated chat experience`):
+  - Plano detalhado: `docs/superpowers/plans/2026-06-10-sprint-9-integrated-chat-web.md`.
+  - Novos serviços web: `ChatApiService` encapsula REST com `HttpClient`, headers do `ApiClientService` e parsing dos schemas compartilhados; `ChatRealtimeService` conecta no namespace Socket.IO `/chat`, faz `conversation.join`, parseia eventos realtime e expõe `events$`.
+  - `ConversationsPageComponent` substituiu o placeholder por listagem real com `GET /billing/me`, `GET /conversations`, busca, badges `unreadCount`, preview/hora, atualização por `conversation.updated`, formulário "Nova conversa" com `GET /recipients` e envio inicial por `POST /messages` com `recipientId`.
+  - `ConversationDetailPageComponent` carrega rota direta `/conversations/:conversationId` com `GET /conversations/:id`, `GET /conversations/:id/messages`, `POST /conversations/:id/read`, bolhas cliente/usuário, status (`queued`, `processing`, `sent`, `delivered`, `read`, `failed`), prioridade normal/urgente, saldo/limite e composer por `POST /messages`.
+  - Eventos realtime cobertos no frontend: `message.status` atualiza a bolha enviada; `typing.started`/`typing.stopped` mostram/ocultam "escrevendo"; `message.created` insere resposta do destinatário; `conversation.updated` atualiza preview/badge na lista.
+  - Playwright ganhou `apps/web/e2e/chat.spec.ts` com 3 testes: i18n da lista, rota direta + envio urgente + status/typing/resposta e lista + billing + busca + badge realtime + nova conversa. `shell.spec.ts` foi ajustado para mockar REST no detalhe real.
+  - TDD observado: Playwright falhou primeiro contra os placeholders (`Maria Oliveira`/`Saldo R$ 25,00` ausentes); depois houve falha real porque mocks `**/conversations` interceptavam a navegação SPA e devolviam JSON, corrigida restringindo mocks ao host `http://localhost:3000`; um teste adicional falhou por i18n fixo e foi corrigido migrando textos para `pt-BR.json`/`en-US.json`; outro falhou por badge realtime ausente e foi corrigido assinando `conversation.updated`.
+  - Checagem visual manual: screenshots em `/tmp/bcb-sprint9-conversations-desktop.png` e `/tmp/bcb-sprint9-chat-mobile.png` renderizaram lista desktop e chat mobile sem sobreposição, com saldo, badges, bolhas, status, prioridade urgente e composer visíveis.
+  - Gates verdes: `pnpm --filter @bcb/shared build && pnpm --filter @bcb/web build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (11 testes), `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm exec prettier --check ...` nos arquivos tocados.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -141,9 +151,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 8 e criar o commit sugerido `feat(web): add login and onboarding flows`.
-3. Iniciar a **Sprint 9 - Chat web integrado**.
-4. Antes de codar Sprint 9, gerar plano detalhado em `docs/superpowers/plans/`; incluir listagem de conversas, detalhe por `/conversations/:conversationId`, composer normal/urgente, saldo/limite visual, integração REST com chat e Socket.IO para status/typing.
+2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 9 e criar o commit sugerido `feat(web): add integrated chat experience`.
+3. Iniciar a **Sprint 10 - E2E, Docker e documentação final**.
+4. Antes de codar Sprint 10, gerar plano detalhado em `docs/superpowers/plans/`; incluir fluxo e2e completo contra stack real, Docker com `db:migrate` + `db:seed` automático, README final e documentação de cortes.
 
 ## Skills sugeridas para o próximo agente
 
@@ -179,8 +189,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - A fila já emite `message.status` via `RealtimePublisher`; não duplicar processamento no frontend. A integração Socket.IO do cliente fica para os fluxos de conversa da Sprint 9.
 - O simulador de destinatário fica ligado por padrão; em testes que afirmam estados finais da fila, setar `RECIPIENT_SIMULATOR_ENABLED=false`.
 - A shell web agora usa sessão real em `bcb.session`. Não voltar para as chaves provisórias `bcb.session.active`/`bcb.onboarding.completed`.
-- `apps/web` ainda não tem runner unitário real; `pnpm test` segue placeholder. A cobertura efetiva das Sprints 7/8 está em Playwright visual/rotas/preferências/fluxos HTTP mockados.
+- `apps/web` ainda não tem runner unitário real; `pnpm test` segue placeholder. A cobertura efetiva das Sprints 7/8/9 está em Playwright visual/rotas/preferências/fluxos HTTP mockados e eventos realtime injetados.
 - O `ApiClientService` usa `http://localhost:3000` por padrão; para ambientes servidos por proxy/reverse proxy, ajustar via `localStorage['bcb.api.baseUrl']` ou consolidar isso na Sprint 10.
+- Em Playwright web, mocks de API devem mirar `http://localhost:3000/...`; padrões amplos como `**/conversations` interceptam a navegação SPA do servidor estático e retornam JSON como documento.
 
 ## Pendências que dependem do Yan
 

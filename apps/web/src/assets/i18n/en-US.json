@@ -47,16 +47,57 @@
   "conversations": {
     "kicker": "Support",
     "title": "Conversations",
-    "description": "Initial list ready to receive API data and realtime events.",
-    "demoName": "Maria Oliveira",
-    "demoPreview": "Open deep conversation route"
+    "description": "Recent history with priority, read state and operating balance.",
+    "balance": "Balance {{amount}}",
+    "limit": "Limit {{limit}} · Remaining {{remaining}}",
+    "newConversation": "New conversation",
+    "recipientLabel": "Recipient",
+    "initialMessageLabel": "Initial message",
+    "sendNewConversation": "Send new conversation",
+    "searchLabel": "Search conversations",
+    "listLabel": "Conversation list",
+    "loading": "Loading conversations...",
+    "emptyMessage": "No messages yet",
+    "emptySearch": "No conversations found.",
+    "unread": "{{count}} unread",
+    "feedback": {
+      "invalidNewConversation": "Fill in the recipient and message.",
+      "newConversationSent": "Initial message sent",
+      "newConversationFailed": "Could not send the initial message.",
+      "recipientsFailed": "Could not load recipients."
+    },
+    "errors": {
+      "loadFailed": "Could not load conversations."
+    }
   },
   "conversation": {
     "kicker": "Conversation",
-    "title": "Support thread",
-    "description": "Base screen for history, message status and realtime typing.",
-    "routeId": "Conversation ID",
-    "back": "Back to conversations"
+    "loadingTitle": "Loading...",
+    "back": "Back",
+    "typing": "{{name}} is typing...",
+    "historyLabel": "Conversation history",
+    "loading": "Loading messages...",
+    "empty": "There are no messages in this conversation yet.",
+    "messageLabel": "Message",
+    "priorityLabel": "Priority",
+    "normalPriority": "Normal",
+    "urgentPriority": "Urgent",
+    "send": "Send",
+    "balance": "Balance {{amount}}",
+    "remaining": "Remaining {{amount}}",
+    "errors": {
+      "invalidMessage": "Enter a valid message.",
+      "sendFailed": "Could not send the message.",
+      "loadFailed": "Could not load this conversation."
+    },
+    "status": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "read": "Read",
+      "failed": "Failed"
+    }
   },
   "billing": {
     "kicker": "Finance",

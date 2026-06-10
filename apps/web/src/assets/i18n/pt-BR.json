@@ -47,16 +47,57 @@
   "conversations": {
     "kicker": "Atendimento",
     "title": "Conversas",
-    "description": "Lista inicial pronta para receber dados da API e eventos em tempo real.",
-    "demoName": "Maria Oliveira",
-    "demoPreview": "Abrir rota profunda de conversa"
+    "description": "Histórico recente com prioridade, leitura e saldo operacional.",
+    "balance": "Saldo {{amount}}",
+    "limit": "Limite {{limit}} · Restante {{remaining}}",
+    "newConversation": "Nova conversa",
+    "recipientLabel": "Destinatário",
+    "initialMessageLabel": "Mensagem inicial",
+    "sendNewConversation": "Enviar nova conversa",
+    "searchLabel": "Buscar conversa",
+    "listLabel": "Lista de conversas",
+    "loading": "Carregando conversas...",
+    "emptyMessage": "Sem mensagens ainda",
+    "emptySearch": "Nenhuma conversa encontrada.",
+    "unread": "{{count}} não lidas",
+    "feedback": {
+      "invalidNewConversation": "Preencha destinatário e mensagem.",
+      "newConversationSent": "Mensagem inicial enviada",
+      "newConversationFailed": "Não foi possível enviar a mensagem inicial.",
+      "recipientsFailed": "Não foi possível carregar os destinatários."
+    },
+    "errors": {
+      "loadFailed": "Não foi possível carregar as conversas."
+    }
   },
   "conversation": {
     "kicker": "Conversa",
-    "title": "Atendimento",
-    "description": "Tela base para histórico, status de mensagem e digitação em tempo real.",
-    "routeId": "ID da conversa",
-    "back": "Voltar para conversas"
+    "loadingTitle": "Carregando...",
+    "back": "Voltar",
+    "typing": "{{name}} está escrevendo...",
+    "historyLabel": "Histórico da conversa",
+    "loading": "Carregando mensagens...",
+    "empty": "Ainda não há mensagens nesta conversa.",
+    "messageLabel": "Mensagem",
+    "priorityLabel": "Prioridade",
+    "normalPriority": "Normal",
+    "urgentPriority": "Urgente",
+    "send": "Enviar",
+    "balance": "Saldo {{amount}}",
+    "remaining": "Restante {{amount}}",
+    "errors": {
+      "invalidMessage": "Digite uma mensagem válida.",
+      "sendFailed": "Não foi possível enviar a mensagem.",
+      "loadFailed": "Não foi possível carregar esta conversa."
+    },
+    "status": {
+      "queued": "Na fila",
+      "processing": "Processando",
+      "sent": "Enviada",
+      "delivered": "Entregue",
+      "read": "Lida",
+      "failed": "Falhou"
+    }
   },
   "billing": {
     "kicker": "Financeiro",

@@ -93,9 +93,54 @@ test.describe('BCB Angular shell', () => {
     await page.evaluate((session) => {
       localStorage.setItem('bcb.session', session);
     }, storeSession(true));
+    await page.route(`http://localhost:3000/conversations/${conversationId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: conversationId,
+          recipientId: '550e8400-e29b-41d4-a716-446655440021',
+          recipientName: 'Maria Oliveira',
+          lastMessageContent: null,
+          lastMessageAt: null,
+          unreadCount: 0,
+        }),
+      });
+    });
+    await page.route(
+      `http://localhost:3000/conversations/${conversationId}/messages`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: '[]',
+        });
+      },
+    );
+    await page.route(
+      `http://localhost:3000/conversations/${conversationId}/read`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ conversationId, unreadCount: 0 }),
+        });
+      },
+    );
+    await page.route('http://localhost:3000/billing/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          planType: 'prepaid',
+          balanceCents: 2500,
+          transactions: [],
+        }),
+      });
+    });
     await page.goto(`/conversations/${conversationId}`);
     await expect(page).toHaveURL(new RegExp(`/conversations/${conversationId}$`));
-    await expect(page.getByRole('heading', { name: 'Atendimento' })).toBeVisible();
-    await expect(page.getByText(conversationId)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Maria Oliveira' })).toBeVisible();
+    await expect(page.getByText('Ainda não há mensagens nesta conversa.')).toBeVisible();
   });
 });
