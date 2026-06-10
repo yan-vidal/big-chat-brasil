@@ -73,6 +73,17 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - TDD observado: contrato JWT falhou por campo descartado; auth HTTP falhou primeiro por rota 404; `RolesGuard` falhou por imports ausentes; todos ficaram verdes após implementação.
   - Gates finais verdes: `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm --filter @bcb/api test:db`.
   - Observação operacional: o primeiro `pnpm install --lockfile-only` dentro do sandbox emitiu muitos `EAI_AGAIN`, mas concluiu e sincronizou `pnpm-lock.yaml`; comandos de DB continuam exigindo permissão fora do sandbox para TCP local.
+- **Sprint 4 - Onboarding e cobrança implementada e verificada** (`feat(api): add onboarding and billing rules`):
+  - Plano detalhado: `docs/superpowers/plans/2026-06-10-sprint-4-onboarding-billing.md`.
+  - Novo `BillingModule` com `POST /billing/onboarding`, `POST /billing/pix-intents`, `POST /billing/pix-intents/:id/confirm` e `GET /billing/me`.
+  - `POST /billing/onboarding` atualiza o `client_profiles` criado pela auth; pré-pago fica com `onboarding_completed=false` até confirmar PIX, pós-pago fica ativo imediatamente com `monthly_limit_cents`, `monthly_used_cents=0` e `usage_month` atual.
+  - PIX simulado persiste `payment_intents`, confirma apenas uma vez, cria transação `credit`, credita saldo e ativa onboarding pré-pago.
+  - `GET /billing/me` retorna resumo discriminado por plano com histórico resumido de transações e exige onboarding completo.
+  - `BillingService.chargeMessage()` ficou pronto para a Sprint 5: pré-pago faz débito atômico e transação `debit`; pós-pago aplica reset preguiçoso de `usage_month`, consumo atômico e transação `usage`; saldo/limite insuficiente retornam `INSUFFICIENT_BALANCE`/`INSUFFICIENT_LIMIT`.
+  - `BillingService.refundPrepaid()` cria transação `refund` e recompõe saldo para uso futuro quando envio falhar.
+  - `OnboardingGuard` consulta o banco via `BillingService.isClientOnboarded()` em vez de confiar no claim `requiresOnboarding`, evitando token stale após onboarding.
+  - TDD observado: `OnboardingGuard` falhou por módulo ausente; billing HTTP falhou por `BillingService` ausente; depois houve correções guiadas por falhas reais de DI (`JwtModule` não exportado) e SQL (`clientId` usado como alias no `where`).
+  - Gates finais verdes: `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm --filter @bcb/api test:db`.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -87,9 +98,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 3 e criar o commit sugerido `feat(api): implement jwt auth with document login`.
-3. Iniciar a **Sprint 4 - Onboarding e cobrança**.
-4. Antes de codar Sprint 4, gerar plano detalhado em `docs/superpowers/plans/`; incluir onboarding pré/pós-pago, PIX simulado, saldo/limite/histórico resumido e regras financeiras que bloqueiam chat sem onboarding.
+2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 4 e criar o commit sugerido `feat(api): add onboarding and billing rules`.
+3. Iniciar a **Sprint 5 - Conversas, mensagens e fila**.
+4. Antes de codar Sprint 5, gerar plano detalhado em `docs/superpowers/plans/`; incluir listagem de conversas, catálogo de recipients, envio por `conversationId` ou `recipientId`, chamada a `BillingService.chargeMessage()`, fila em memória com prioridade, recuperação no bootstrap e `GET /queue/status` admin.
 
 ## Skills sugeridas para o próximo agente
 
@@ -119,6 +130,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - `@bcb/api` e `@bcb/shared` estão em ESM/NodeNext. Imports relativos em TypeScript devem usar sufixo `.js`; não voltar para imports extensionless.
 - `pnpm test` pula a integração DB por padrão; usar `pnpm --filter @bcb/api test:db` com o Postgres do Compose healthy para validar migrations/seed.
 - `POST /auth/session` já cria conta/perfil mínimo para documentos novos; a Sprint 4 deve atualizar esse perfil via onboarding em vez de criar outro perfil para a mesma conta.
+- `OnboardingGuard` deve proteger conversas/mensagens na Sprint 5. Para billing, só `GET /billing/me` usa esse guard; onboarding e PIX precisam funcionar antes do onboarding completo.
+- Na Sprint 5, não reimplementar débito/limite: chamar `BillingService.chargeMessage()` dentro da transação/fluxo de envio planejado e, em falha pós-cobrança pré-paga, chamar `refundPrepaid()`.
 
 ## Pendências que dependem do Yan
 
