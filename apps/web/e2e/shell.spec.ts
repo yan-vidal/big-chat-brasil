@@ -29,8 +29,8 @@ test.describe('BCB Angular shell', () => {
     await expect(page.getByRole('heading', { name: 'Big Chat Brasil' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Acesso do cliente' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Onboarding', exact: true })).toBeHidden();
-    await expect(page.getByRole('link', { name: 'Conversas' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Cobrança' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Conversas' })).toBeHidden();
+    await expect(page.getByRole('link', { name: 'Cobrança' })).toBeHidden();
     await expect(page.locator('header')).toHaveCSS('display', 'flex');
 
     await testInfo.attach('sprint-7-login-shell', {
@@ -186,12 +186,16 @@ test.describe('BCB Angular shell', () => {
     await page.goto('/billing');
 
     await expect(page.getByRole('link', { name: 'Acesso', exact: true })).toBeHidden();
+    await expect(page.getByRole('link', { name: 'Conversas', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Cobrança', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Sair', exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
 
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('link', { name: 'Acesso', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Conversas', exact: true })).toBeHidden();
+    await expect(page.getByRole('link', { name: 'Cobrança', exact: true })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Sair', exact: true })).toBeHidden();
     await expect(page.evaluate(() => localStorage.getItem('bcb.session'))).resolves.toBeNull();
   });

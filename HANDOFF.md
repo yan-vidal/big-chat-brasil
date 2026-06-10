@@ -244,6 +244,13 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - RED confirmado: teste i18n falhou primeiro por falta de `es-ES.json`; depois passou após implementação. Também houve ajuste do teste de tema para usar `Tema oscuro`/`Tema claro` quando o idioma ativo é espanhol.
   - Gates verdes: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/i18n.spec.ts e2e/shell.spec.ts -g "i18n assets|persists language"` (2 testes), `pnpm format:check`, `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (19 testes).
   - Docker local atualizado: `docker compose build web` e `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; validação focada contra `localhost:4200` com Playwright e config temporária sem `webServer` passou para o fluxo `persists language`.
+- **Hotfix web - ocultar Conversas e Cobrança quando deslogado**:
+  - Pedido do Yan: manter `Conversas` e `Cobrança` ocultos quando não houver sessão ativa.
+  - `apps/web/src/app/app.component.ts` agora renderiza os links `Conversas` e `Cobrança` dentro de `session.authenticated()`.
+  - `apps/web/e2e/shell.spec.ts` atualizou o teste da tela de login para exigir os links ocultos e o teste de logout para garantir que eles somem novamente após `Sair`.
+  - RED confirmado: o spec falhou primeiro porque `Conversas` continuava visível no login e após logout; depois passou com 5 testes.
+  - Gates verdes: `pnpm format:check`, `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (19 testes).
+  - Docker local atualizado: `docker compose build web` e `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; os testes focados de login/logout passaram contra `localhost:4200` com config Playwright temporária sem `webServer`, removida após a validação.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -258,7 +265,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Confirmar se o bloco de i18n/auditoria aparece no log como `feat(web): add spanish locale`; se não aparecer, revisar o diff deste bloco e commitar antes de seguir.
+2. Confirmar se o hotfix de navegação aparece no log como `fix(web): hide protected nav while logged out`; se não aparecer, revisar o diff deste bloco e commitar antes de seguir.
 3. Fazer uma revisão final de entrega: checar README e `docs/challenge-compliance.md` do ponto de vista do avaliador, validar Docker/full-stack em ambiente limpo, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
 4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado. Se quiser maximizar aderência literal aos endpoints sugeridos, o próximo bloco opcional é adicionar aliases `/auth`, `/clients` e `GET /messages` sem mudar o fluxo principal.
 
