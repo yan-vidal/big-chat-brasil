@@ -40,7 +40,16 @@ export const MessageStatusResponseSchema = z.object({
   occurredAt: IsoDateTimeSchema,
 });
 
+export const QueueStatusResponseSchema = z.object({
+  normalQueued: z.number().int().nonnegative(),
+  urgentQueued: z.number().int().nonnegative(),
+  processing: z.boolean(),
+  processedCount: z.number().int().nonnegative(),
+  failedCount: z.number().int().nonnegative(),
+});
+
 export type SendMessageRequest = z.infer<typeof SendMessageRequestSchema>;
 export type SendMessageResponse = z.infer<typeof SendMessageResponseSchema>;
 export type MessageResponse = z.infer<typeof MessageResponseSchema>;
 export type MessageStatusResponse = z.infer<typeof MessageStatusResponseSchema>;
+export type QueueStatusResponse = z.infer<typeof QueueStatusResponseSchema>;

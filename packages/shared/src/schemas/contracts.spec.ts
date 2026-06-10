@@ -8,6 +8,7 @@ import {
 import { BillingSummaryResponseSchema, type BillingSummaryResponse } from './billing.js';
 import { ConversationResponseSchema } from './conversation.js';
 import {
+  QueueStatusResponseSchema,
   SendMessageRequestSchema,
   SendMessageResponseSchema,
   type SendMessageRequest,
@@ -142,6 +143,18 @@ describe('billing, conversation, and message contracts', () => {
         currentBalance: 2450,
       }).cost,
     ).toBe(50);
+  });
+
+  it('accepts queue status counters', () => {
+    expect(
+      QueueStatusResponseSchema.parse({
+        normalQueued: 1,
+        urgentQueued: 2,
+        processing: false,
+        processedCount: 3,
+        failedCount: 0,
+      }),
+    ).toMatchObject({ urgentQueued: 2 });
   });
 
   it('infers billing and message request types', () => {

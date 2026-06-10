@@ -84,6 +84,16 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - `OnboardingGuard` consulta o banco via `BillingService.isClientOnboarded()` em vez de confiar no claim `requiresOnboarding`, evitando token stale após onboarding.
   - TDD observado: `OnboardingGuard` falhou por módulo ausente; billing HTTP falhou por `BillingService` ausente; depois houve correções guiadas por falhas reais de DI (`JwtModule` não exportado) e SQL (`clientId` usado como alias no `where`).
   - Gates finais verdes: `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm --filter @bcb/api test:db`.
+- **Sprint 5 - Conversas, mensagens e fila implementada e verificada** (`feat(api): add conversations messages and priority queue`):
+  - Plano detalhado: `docs/superpowers/plans/2026-06-10-sprint-5-conversations-messages-queue.md`.
+  - Novos módulos API: `recipients`, `conversations`, `messages`, `queue` e erros compartilhados em `chat/chat.errors.ts`.
+  - Endpoints implementados: `GET /recipients`, `GET /conversations`, `GET /conversations/:id`, `GET /conversations/:id/messages`, `POST /conversations/:id/read`, `POST /messages`, `GET /messages/:id`, `GET /messages/:id/status`, `GET /queue/status`.
+  - Todos os endpoints de chat usam `JwtAuthGuard` e `OnboardingGuard`; `GET /queue/status` usa `JwtAuthGuard`, `RolesGuard` e `@Roles('admin')`.
+  - `POST /messages` aceita `conversationId` ou `recipientId`, faz find-or-create de conversa por destinatário, chama `BillingService.chargeMessage()`, persiste mensagem `queued`, atualiza preview da conversa e enfileira a mensagem.
+  - Fila em memória com filas `urgent` e `normal`, urgentes antes de normais e anti-starvation após três urgentes consecutivas. Status persistem `queued -> processing -> sent -> delivered`; recovery no bootstrap re-enfileira mensagens `queued`/`processing`.
+  - `packages/shared/src/schemas/message.ts` recebeu `QueueStatusResponseSchema` para o contrato de `GET /queue/status`; a API usa tipo local para não depender de build prévio do `@bcb/shared` durante `test:db`.
+  - TDD observado: contrato de queue falhou por schema ausente; specs Supertest falharam por 404/módulos ausentes; depois houve correções guiadas por falha real de runtime (`@bcb/shared` dist stale) e tipagem (`unreadCount` literal).
+  - Gates finais verdes: `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm --filter @bcb/api test:db`.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -98,9 +108,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 4 e criar o commit sugerido `feat(api): add onboarding and billing rules`.
-3. Iniciar a **Sprint 5 - Conversas, mensagens e fila**.
-4. Antes de codar Sprint 5, gerar plano detalhado em `docs/superpowers/plans/`; incluir listagem de conversas, catálogo de recipients, envio por `conversationId` ou `recipientId`, chamada a `BillingService.chargeMessage()`, fila em memória com prioridade, recuperação no bootstrap e `GET /queue/status` admin.
+2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 5 e criar o commit sugerido `feat(api): add conversations messages and priority queue`.
+3. Iniciar a **Sprint 6 - WebSocket**.
+4. Antes de codar Sprint 6, gerar plano detalhado em `docs/superpowers/plans/`; incluir gateway `/chat`, handshake JWT, salas por cliente/conversa, eventos `message.created`, `message.status`, `conversation.updated`, `typing.started`, `typing.stopped` e simulador de destinatário com delays zeráveis por env.
 
 ## Skills sugeridas para o próximo agente
 
@@ -132,6 +142,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - `POST /auth/session` já cria conta/perfil mínimo para documentos novos; a Sprint 4 deve atualizar esse perfil via onboarding em vez de criar outro perfil para a mesma conta.
 - `OnboardingGuard` deve proteger conversas/mensagens na Sprint 5. Para billing, só `GET /billing/me` usa esse guard; onboarding e PIX precisam funcionar antes do onboarding completo.
 - Na Sprint 5, não reimplementar débito/limite: chamar `BillingService.chargeMessage()` dentro da transação/fluxo de envio planejado e, em falha pós-cobrança pré-paga, chamar `refundPrepaid()`.
+- `QUEUE_AUTOSTART=false` nos testes mantém mensagens `queued` até o teste chamar `QueueService.processNextForTests()`. Em runtime, o default é autostart ligado.
+- A fila já persiste transições de status, mas ainda não emite eventos. A Sprint 6 deve ouvir/reutilizar essas transições para WebSocket em vez de duplicar processamento.
 
 ## Pendências que dependem do Yan
 
