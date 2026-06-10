@@ -1,5 +1,10 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { AuthSessionRequestSchema, type AuthSessionRequest } from './auth.js';
+import {
+  AuthSessionRequestSchema,
+  JwtPayloadSchema,
+  type AuthSessionRequest,
+  type JwtPayload,
+} from './auth.js';
 import { BillingSummaryResponseSchema, type BillingSummaryResponse } from './billing.js';
 import { ConversationResponseSchema } from './conversation.js';
 import {
@@ -34,6 +39,19 @@ describe('auth and onboarding contracts', () => {
     ).toBe(false);
   });
 
+  it('requires onboarding status in JWT payloads', () => {
+    expect(
+      JwtPayloadSchema.parse({
+        sub: '11111111-1111-4111-8111-111111111111',
+        clientId: '22222222-2222-4222-8222-222222222222',
+        role: 'client',
+        documentId: '52998224725',
+        documentType: 'CPF',
+        requiresOnboarding: true,
+      }),
+    ).toMatchObject({ requiresOnboarding: true });
+  });
+
   it('requires a monthly limit for postpaid onboarding', () => {
     expect(
       OnboardingRequestSchema.safeParse({
@@ -61,6 +79,7 @@ describe('auth and onboarding contracts', () => {
       documentType: 'CPF' | 'CNPJ';
       password: string;
     }>();
+    expectTypeOf<JwtPayload>().toMatchTypeOf<{ requiresOnboarding: boolean }>();
     expectTypeOf<OnboardingRequest>().toMatchTypeOf<
       | { name: string; planType: 'prepaid' }
       | { name: string; planType: 'postpaid'; monthlyLimitCents: number }

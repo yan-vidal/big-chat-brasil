@@ -9,6 +9,7 @@ export const JwtPayloadSchema = z.object({
   documentType: DocumentTypeSchema,
   role: RoleSchema,
   clientId: IdSchema.optional(),
+  requiresOnboarding: z.boolean(),
 });
 
 export const AuthSessionRequestSchema = z

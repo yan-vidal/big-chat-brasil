@@ -61,6 +61,18 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - TDD observado: helpers de documento falharam por módulo ausente; `database.config` falhou por módulo ausente; seed-data falhou por módulo ausente; integração DB falhou por módulos ausentes e depois passou com Postgres real.
   - Gates executados e verdes: `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm --filter @bcb/api test:db`, `pnpm --filter @bcb/api db:migrate`, `pnpm --filter @bcb/api db:seed`, Prettier nos arquivos tocados.
   - Observação operacional: `test:db`, `db:migrate` e `db:seed` precisam de conexão TCP com PostgreSQL local; no Codex sandbox, rodar fora do sandbox/escalado. O container `big-chat-brasil-irrah-db-1` está `healthy` e o banco local foi migrado/seedado nesta sessão.
+- **Sprint 3 - Autenticação e sessão implementada e verificada** (`feat(api): implement jwt auth with document login`):
+  - Plano detalhado: `docs/superpowers/plans/2026-06-09-sprint-3-auth-jwt.md`.
+  - `@bcb/api` recebeu `@nestjs/jwt`, `supertest` e `@types/supertest`; `test:db` agora roda todos os specs API com `BCB_RUN_DB_TESTS=true`, incluindo HTTP auth e integração DB.
+  - `packages/shared/src/schemas/auth.ts` passou a exigir `requiresOnboarding` no `JwtPayloadSchema`, alinhando o contrato ao plano mestre.
+  - Novo `AuthModule` com `POST /auth/session` e `GET /auth/me`.
+  - `POST /auth/session` valida o body com `AuthSessionRequestSchema`, normaliza CPF/CNPJ, cria automaticamente conta cliente quando o documento não existe, salva hash `bcryptjs`, compara hash em login existente e retorna JWT assinado.
+  - Auto-criação de conta cria um `client_profiles` mínimo (`name = "Cliente BCB"`, `plan_type = prepaid`, `onboarding_completed = false`) para manter `clientId` presente no JWT; dados reais ficam para a Sprint 4.
+  - JWT inclui `sub`, `clientId`, `role`, `documentId`, `documentType` e `requiresOnboarding`; `GET /auth/me` carrega o perfil atual a partir do token Bearer.
+  - Guards reutilizáveis adicionados: `JwtAuthGuard`, `RolesGuard` e decorator `@Roles(...)`.
+  - TDD observado: contrato JWT falhou por campo descartado; auth HTTP falhou primeiro por rota 404; `RolesGuard` falhou por imports ausentes; todos ficaram verdes após implementação.
+  - Gates finais verdes: `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm --filter @bcb/api test:db`.
+  - Observação operacional: o primeiro `pnpm install --lockfile-only` dentro do sandbox emitiu muitos `EAI_AGAIN`, mas concluiu e sincronizou `pnpm-lock.yaml`; comandos de DB continuam exigindo permissão fora do sandbox para TCP local.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -75,8 +87,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Iniciar a **Sprint 3 - Autenticação e sessão**.
-3. Antes de codar Sprint 3, gerar plano detalhado em `docs/superpowers/plans/`; incluir login/criação por CPF/CNPJ, hash bcrypt, JWT, guards, headers de cliente e testes HTTP.
+2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 3 e criar o commit sugerido `feat(api): implement jwt auth with document login`.
+3. Iniciar a **Sprint 4 - Onboarding e cobrança**.
+4. Antes de codar Sprint 4, gerar plano detalhado em `docs/superpowers/plans/`; incluir onboarding pré/pós-pago, PIX simulado, saldo/limite/histórico resumido e regras financeiras que bloqueiam chat sem onboarding.
 
 ## Skills sugeridas para o próximo agente
 
@@ -105,6 +118,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - E2E local depende do Chrome do sistema em `/usr/bin/google-chrome-stable` via `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`; sem isso o Playwright pode tentar usar browser baixado.
 - `@bcb/api` e `@bcb/shared` estão em ESM/NodeNext. Imports relativos em TypeScript devem usar sufixo `.js`; não voltar para imports extensionless.
 - `pnpm test` pula a integração DB por padrão; usar `pnpm --filter @bcb/api test:db` com o Postgres do Compose healthy para validar migrations/seed.
+- `POST /auth/session` já cria conta/perfil mínimo para documentos novos; a Sprint 4 deve atualizar esse perfil via onboarding em vez de criar outro perfil para a mesma conta.
 
 ## Pendências que dependem do Yan
 
