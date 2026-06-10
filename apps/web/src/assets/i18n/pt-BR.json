@@ -15,16 +15,34 @@
   "auth": {
     "kicker": "Identificação",
     "title": "Acesso do cliente",
-    "description": "Entrada por CPF ou CNPJ com senha. A criação e autenticação reais entram no próximo bloco.",
-    "next": "Após autenticar, clientes novos seguem para ativação de plano.",
-    "onboardingLink": "Ir para onboarding"
+    "description": "Entrada por CPF ou CNPJ com senha. Clientes novos seguem para ativação do plano.",
+    "documentLabel": "Documento",
+    "passwordLabel": "Senha",
+    "submit": "Entrar",
+    "loading": "Processando",
+    "errors": {
+      "invalidDocument": "Documento inválido",
+      "requestFailed": "Não foi possível autenticar com esses dados"
+    }
   },
   "onboarding": {
     "kicker": "Ativação",
     "title": "Onboarding",
-    "description": "Escolha de plano e pagamento simulado serão conectados ao backend na próxima sprint de fluxo.",
-    "prepaid": "Pré-pago com crédito inicial via PIX simulado.",
-    "postpaid": "Pós-pago com limite mensal configurável."
+    "description": "Escolha o plano e conclua a ativação da conta.",
+    "nameLabel": "Nome",
+    "planLabel": "Plano",
+    "prepaidOption": "Pré-pago",
+    "postpaidOption": "Pós-pago",
+    "initialCreditLabel": "Crédito inicial",
+    "monthlyLimitLabel": "Limite mensal",
+    "generatePix": "Gerar PIX",
+    "activatePlan": "Ativar plano",
+    "pixPending": "PIX simulado pendente",
+    "confirmPix": "Já paguei",
+    "errors": {
+      "invalidForm": "Preencha os dados do plano",
+      "requestFailed": "Não foi possível ativar o plano"
+    }
   },
   "conversations": {
     "kicker": "Atendimento",

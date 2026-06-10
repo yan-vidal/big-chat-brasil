@@ -1,22 +1,89 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
+import {
+  AuthSessionResponseSchema,
+  type AuthenticatedClient,
+  type AuthSessionResponse,
+} from '@bcb/shared';
 
-const SESSION_ACTIVE_KEY = 'bcb.session.active';
-const ONBOARDING_COMPLETED_KEY = 'bcb.onboarding.completed';
+const SESSION_KEY = 'bcb.session';
+
+export type StoredSession = AuthSessionResponse;
 
 @Injectable({ providedIn: 'root' })
 export class SessionStore {
-  private readonly authenticatedSignal = signal(readBoolean(SESSION_ACTIVE_KEY));
-  private readonly onboardingCompletedSignal = signal(readBoolean(ONBOARDING_COMPLETED_KEY));
+  private readonly sessionSignal = signal<StoredSession | null>(readSession());
 
-  readonly authenticated = this.authenticatedSignal.asReadonly();
-  readonly onboardingCompleted = this.onboardingCompletedSignal.asReadonly();
+  readonly session = this.sessionSignal.asReadonly();
+  readonly authenticated = computed(() => this.sessionSignal() !== null);
+  readonly onboardingCompleted = computed(() => {
+    const session = this.sessionSignal();
+
+    return Boolean(session && !session.requiresOnboarding && session.client.onboardingCompleted);
+  });
+  readonly token = computed(() => this.sessionSignal()?.token ?? null);
 
   refreshFromStorage(): void {
-    this.authenticatedSignal.set(readBoolean(SESSION_ACTIVE_KEY));
-    this.onboardingCompletedSignal.set(readBoolean(ONBOARDING_COMPLETED_KEY));
+    this.sessionSignal.set(readSession());
+  }
+
+  setSession(session: AuthSessionResponse): void {
+    const parsed = AuthSessionResponseSchema.parse(session);
+    this.sessionSignal.set(parsed);
+    globalThis.localStorage?.setItem(SESSION_KEY, JSON.stringify(parsed));
+  }
+
+  updateClient(
+    client: AuthenticatedClient,
+    requiresOnboarding = !client.onboardingCompleted,
+  ): void {
+    const current = this.sessionSignal();
+
+    if (!current) {
+      return;
+    }
+
+    this.setSession({
+      token: current.token,
+      requiresOnboarding,
+      client,
+    });
+  }
+
+  markOnboardingCompleted(partialClient: Partial<AuthenticatedClient> = {}): void {
+    const current = this.sessionSignal();
+
+    if (!current) {
+      return;
+    }
+
+    this.setSession({
+      token: current.token,
+      requiresOnboarding: false,
+      client: {
+        ...current.client,
+        ...partialClient,
+        onboardingCompleted: true,
+      },
+    });
+  }
+
+  clear(): void {
+    this.sessionSignal.set(null);
+    globalThis.localStorage?.removeItem(SESSION_KEY);
   }
 }
 
-function readBoolean(key: string): boolean {
-  return globalThis.localStorage?.getItem(key) === 'true';
+function readSession(): StoredSession | null {
+  const raw = globalThis.localStorage?.getItem(SESSION_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return AuthSessionResponseSchema.parse(JSON.parse(raw));
+  } catch {
+    globalThis.localStorage?.removeItem(SESSION_KEY);
+    return null;
+  }
 }

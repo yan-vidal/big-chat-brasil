@@ -1,6 +1,26 @@
 import { expect, test } from '@playwright/test';
 
 const conversationId = '550e8400-e29b-41d4-a716-446655440011';
+const clientId = '550e8400-e29b-41d4-a716-446655440001';
+
+function storeSession(onboardingCompleted: boolean): string {
+  return JSON.stringify({
+    token: 'test-token',
+    requiresOnboarding: !onboardingCompleted,
+    client: {
+      id: clientId,
+      name: 'Empresa ABC',
+      documentId: '11222333000181',
+      documentType: 'CNPJ',
+      role: 'client',
+      planType: 'prepaid',
+      active: true,
+      onboardingCompleted,
+      balanceCents: 2500,
+      monthlyUsedCents: 0,
+    },
+  });
+}
 
 test.describe('BCB Angular shell', () => {
   test('renders route navigation on the login page', async ({ page }, testInfo) => {
@@ -12,6 +32,9 @@ test.describe('BCB Angular shell', () => {
     await expect(page.getByRole('link', { name: 'Cobrança' })).toBeVisible();
     await expect(page.locator('header')).toHaveCSS('display', 'flex');
 
+    await page.evaluate((session) => {
+      localStorage.setItem('bcb.session', session);
+    }, storeSession(false));
     await page.getByRole('link', { name: 'Onboarding', exact: true }).click();
     await expect(page).toHaveURL(/\/onboarding$/);
     await expect(page.getByRole('heading', { name: 'Onboarding' })).toBeVisible();
@@ -44,16 +67,32 @@ test.describe('BCB Angular shell', () => {
 
     await page.goto('/login');
     await page.evaluate(() => {
-      localStorage.setItem('bcb.session.active', 'true');
-      localStorage.setItem('bcb.onboarding.completed', 'false');
+      localStorage.setItem(
+        'bcb.session',
+        JSON.stringify({
+          token: 'test-token',
+          requiresOnboarding: true,
+          client: {
+            id: '550e8400-e29b-41d4-a716-446655440001',
+            name: 'Empresa ABC',
+            documentId: '11222333000181',
+            documentType: 'CNPJ',
+            role: 'client',
+            planType: 'prepaid',
+            active: true,
+            onboardingCompleted: false,
+            balanceCents: 2500,
+            monthlyUsedCents: 0,
+          },
+        }),
+      );
     });
     await page.goto('/conversations');
     await expect(page).toHaveURL(/\/onboarding$/);
 
-    await page.evaluate(() => {
-      localStorage.setItem('bcb.session.active', 'true');
-      localStorage.setItem('bcb.onboarding.completed', 'true');
-    });
+    await page.evaluate((session) => {
+      localStorage.setItem('bcb.session', session);
+    }, storeSession(true));
     await page.goto(`/conversations/${conversationId}`);
     await expect(page).toHaveURL(new RegExp(`/conversations/${conversationId}$`));
     await expect(page.getByRole('heading', { name: 'Atendimento' })).toBeVisible();

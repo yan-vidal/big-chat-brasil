@@ -1,5 +1,5 @@
 import { type Routes } from '@angular/router';
-import { onboardingGuard } from './core/auth/auth.guard';
+import { authGuard, onboardingGuard } from './core/auth/auth.guard';
 import { BillingPageComponent } from './features/billing/billing-page.component';
 import { ConversationDetailPageComponent } from './features/chat/conversation-detail-page.component';
 import { ConversationsPageComponent } from './features/chat/conversations-page.component';
@@ -9,7 +9,7 @@ import { OnboardingPageComponent } from './features/onboarding/onboarding-page.c
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginPageComponent },
-  { path: 'onboarding', component: OnboardingPageComponent },
+  { path: 'onboarding', component: OnboardingPageComponent, canActivate: [authGuard] },
   { path: 'conversations', component: ConversationsPageComponent, canActivate: [onboardingGuard] },
   {
     path: 'conversations/:conversationId',

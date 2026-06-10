@@ -15,16 +15,34 @@
   "auth": {
     "kicker": "Identification",
     "title": "Client access",
-    "description": "CPF or CNPJ sign-in with password. Real account creation and authentication arrive in the next block.",
-    "next": "After authentication, new clients continue to plan activation.",
-    "onboardingLink": "Go to onboarding"
+    "description": "CPF or CNPJ sign-in with password. New clients continue to plan activation.",
+    "documentLabel": "Document",
+    "passwordLabel": "Password",
+    "submit": "Sign in",
+    "loading": "Processing",
+    "errors": {
+      "invalidDocument": "Invalid document",
+      "requestFailed": "Could not authenticate with those credentials"
+    }
   },
   "onboarding": {
     "kicker": "Activation",
     "title": "Onboarding",
-    "description": "Plan choice and simulated payment will be connected to the backend in the next flow sprint.",
-    "prepaid": "Prepaid with initial credit through simulated PIX.",
-    "postpaid": "Postpaid with configurable monthly limit."
+    "description": "Choose the plan and finish account activation.",
+    "nameLabel": "Name",
+    "planLabel": "Plan",
+    "prepaidOption": "Prepaid",
+    "postpaidOption": "Postpaid",
+    "initialCreditLabel": "Initial credit",
+    "monthlyLimitLabel": "Monthly limit",
+    "generatePix": "Generate PIX",
+    "activatePlan": "Activate plan",
+    "pixPending": "Simulated PIX pending",
+    "confirmPix": "I already paid",
+    "errors": {
+      "invalidForm": "Fill in the plan data",
+      "requestFailed": "Could not activate the plan"
+    }
   },
   "conversations": {
     "kicker": "Support",

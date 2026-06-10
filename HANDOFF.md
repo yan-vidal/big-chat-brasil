@@ -111,11 +111,22 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - Nova estrutura `apps/web/src/app/`: `app.component.ts`, `app.routes.ts`, `core/auth`, `core/preferences` e páginas placeholder por feature (`auth`, `onboarding`, `chat`, `billing`).
   - Shell visual operacional com header, nav principal, seletor `pt-BR`/`en-US` e toggle claro/escuro; layout foi validado visualmente em desktop e mobile.
   - `PreferencesService` persiste idioma em `bcb.preferences.language`, tema em `bcb.preferences.theme` e aplica `.dark` no `documentElement`.
-  - `SessionStore` lê `bcb.session.active` e `bcb.onboarding.completed`; `onboardingGuard` protege `/conversations`, `/conversations/:conversationId` e `/billing`.
+  - Na Sprint 7, `SessionStore` ainda lia chaves provisórias (`bcb.session.active` e `bcb.onboarding.completed`); a Sprint 8 substituiu isso por sessão real em `bcb.session`.
   - Traduções em `apps/web/src/assets/i18n/pt-BR.json` e `en-US.json`, consumidas pelo `@ngx-translate/core`.
   - Playwright cobre shell/rotas, persistência de idioma/tema e redirects de guards por estado de sessão em `localStorage`.
   - TDD observado: Playwright falhou primeiro contra o placeholder (`Acesso do cliente`/`Idioma` ausentes e `/conversations` sem redirect); depois houve uma falha real por seletor ambíguo de `Onboarding` e uma correção visual mobile para nav que esticava/cortava texto.
   - Gates verdes: `pnpm --filter @bcb/web build`, `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (3 testes), `pnpm exec prettier --check ...` nos arquivos tocados.
+- **Sprint 8 - Login e onboarding web implementada e verificada** (`feat(web): add login and onboarding flows`):
+  - Plano detalhado: `docs/superpowers/plans/2026-06-10-sprint-8-login-onboarding-web.md`.
+  - `@bcb/web` agora depende de `@bcb/shared` e usa schemas/validadores compartilhados para documento, auth e onboarding.
+  - `main.ts` adicionou `provideHttpClient`; `ApiClientService` usa `http://localhost:3000` por padrão e aceita override via `localStorage['bcb.api.baseUrl']`.
+  - `SessionStore` persiste sessão real em `bcb.session` (`token`, `requiresOnboarding`, `client`) e os guards passaram a ler essa sessão.
+  - `LoginPageComponent` tem formulário real com documento/senha, inferência visual CPF/CNPJ, validação client-side por `AuthSessionRequestSchema`, chamada `POST /auth/session` e redirect para `/onboarding` ou `/conversations`.
+  - `OnboardingPageComponent` tem fluxo pré-pago com `POST /billing/onboarding`, `POST /billing/pix-intents`, confirmação `POST /billing/pix-intents/:id/confirm` e fluxo pós-pago com `monthlyLimitCents`.
+  - `OnboardingApiService` parseia respostas de onboarding e PIX; após confirmação PIX, a sessão local é marcada como onboarded com o saldo retornado.
+  - Playwright foi ampliado para 8 testes: validação de documento sem chamada HTTP, login ativo, autoregistro com onboarding, onboarding pré-pago com PIX, onboarding pós-pago, shell, preferências e guards.
+  - TDD observado: Playwright falhou primeiro por ausência dos campos `Documento`/`Senha`/`Nome` e por guards lendo chaves antigas; depois 6/8 passaram e as 2 falhas restantes eram seletor ambíguo `CPF`/`CNPJ`.
+  - Gates verdes: `pnpm --filter @bcb/web build`, `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (8 testes), checagem visual desktop/mobile por screenshot, `pnpm exec prettier --check ...` nos arquivos tocados.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -130,9 +141,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 7 e criar o commit sugerido `feat(web): add angular shell routing i18n and theme`.
-3. Iniciar a **Sprint 8 - Login e onboarding web**.
-4. Antes de codar Sprint 8, gerar plano detalhado em `docs/superpowers/plans/`; incluir formulário de documento/senha, inferência CPF/CNPJ, integração com `POST /auth/session`, redirect por `requiresOnboarding`, tela de onboarding, PIX simulado e Playwright do fluxo principal.
+2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 8 e criar o commit sugerido `feat(web): add login and onboarding flows`.
+3. Iniciar a **Sprint 9 - Chat web integrado**.
+4. Antes de codar Sprint 9, gerar plano detalhado em `docs/superpowers/plans/`; incluir listagem de conversas, detalhe por `/conversations/:conversationId`, composer normal/urgente, saldo/limite visual, integração REST com chat e Socket.IO para status/typing.
 
 ## Skills sugeridas para o próximo agente
 
@@ -167,8 +178,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - `QUEUE_AUTOSTART=false` nos testes mantém mensagens `queued` até o teste chamar `QueueService.processNextForTests()`. Em runtime, o default é autostart ligado.
 - A fila já emite `message.status` via `RealtimePublisher`; não duplicar processamento no frontend. A integração Socket.IO do cliente fica para os fluxos de conversa da Sprint 9.
 - O simulador de destinatário fica ligado por padrão; em testes que afirmam estados finais da fila, setar `RECIPIENT_SIMULATOR_ENABLED=false`.
-- A shell web usa localStorage provisório para guards (`bcb.session.active`, `bcb.onboarding.completed`) até a Sprint 8 conectar sessão real; não manter esse bypass como fonte final de autenticação.
-- `apps/web` ainda não tem runner unitário real; `pnpm test` segue placeholder. A cobertura efetiva da Sprint 7 está em Playwright visual/rotas/preferências.
+- A shell web agora usa sessão real em `bcb.session`. Não voltar para as chaves provisórias `bcb.session.active`/`bcb.onboarding.completed`.
+- `apps/web` ainda não tem runner unitário real; `pnpm test` segue placeholder. A cobertura efetiva das Sprints 7/8 está em Playwright visual/rotas/preferências/fluxos HTTP mockados.
+- O `ApiClientService` usa `http://localhost:3000` por padrão; para ambientes servidos por proxy/reverse proxy, ajustar via `localStorage['bcb.api.baseUrl']` ou consolidar isso na Sprint 10.
 
 ## Pendências que dependem do Yan
 
