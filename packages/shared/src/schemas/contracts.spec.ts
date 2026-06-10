@@ -14,6 +14,11 @@ import {
   type SendMessageRequest,
 } from './message.js';
 import { OnboardingRequestSchema, type OnboardingRequest } from './onboarding.js';
+import {
+  ConversationUpdatedEventSchema,
+  MessageStatusEventSchema,
+  TypingEventSchema,
+} from './realtime.js';
 
 describe('auth and onboarding contracts', () => {
   it('normalizes a valid auth document', () => {
@@ -155,6 +160,33 @@ describe('billing, conversation, and message contracts', () => {
         failedCount: 0,
       }),
     ).toMatchObject({ urgentQueued: 2 });
+  });
+
+  it('accepts realtime event payloads', () => {
+    expect(
+      MessageStatusEventSchema.parse({
+        messageId: '550e8400-e29b-41d4-a716-446655440010',
+        conversationId: '550e8400-e29b-41d4-a716-446655440011',
+        status: 'delivered',
+        occurredAt: '2026-06-09T18:00:05.000Z',
+      }),
+    ).toMatchObject({ status: 'delivered' });
+
+    expect(
+      ConversationUpdatedEventSchema.parse({
+        conversationId: '550e8400-e29b-41d4-a716-446655440011',
+        lastMessageContent: 'Recebido, retorno em instantes.',
+        lastMessageAt: '2026-06-09T18:00:06.000Z',
+        unreadCount: 1,
+      }),
+    ).toMatchObject({ unreadCount: 1 });
+
+    expect(
+      TypingEventSchema.parse({
+        conversationId: '550e8400-e29b-41d4-a716-446655440011',
+        senderType: 'user',
+      }),
+    ).toMatchObject({ senderType: 'user' });
   });
 
   it('infers billing and message request types', () => {

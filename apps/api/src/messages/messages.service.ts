@@ -16,8 +16,10 @@ import {
   RecipientNotFoundException,
 } from '../chat/chat.errors.js';
 import { QueueService } from '../queue/queue.service.js';
+import { RealtimePublisher } from '../realtime/realtime.publisher.js';
 import {
   MessagesRepository,
+  type ConversationUpdateRow,
   type ConversationReference,
   type MessageRow,
 } from './messages.repository.js';
@@ -28,6 +30,7 @@ export class MessagesService {
     private readonly messagesRepository: MessagesRepository,
     private readonly billingService: BillingService,
     private readonly queueService: QueueService,
+    private readonly realtimePublisher: RealtimePublisher,
   ) {}
 
   async sendMessage(clientId: string, request: SendMessageRequest): Promise<SendMessageResponse> {
@@ -46,6 +49,7 @@ export class MessagesService {
         costCents: charge.chargedCents,
       });
       this.queueService.enqueue({ messageId: message.id, priority: message.priority });
+      await this.publishMessageEvents(clientId, message);
 
       return SendMessageResponseSchema.parse({
         id: message.id,
@@ -119,6 +123,38 @@ export class MessagesService {
       ...message,
       timestamp: this.toIso(message.timestamp),
     });
+  }
+
+  private async publishMessageEvents(clientId: string, message: MessageRow): Promise<void> {
+    this.realtimePublisher.publishMessageCreated(clientId, {
+      message: this.toMessageResponse(message),
+    });
+
+    const conversation = await this.messagesRepository.findConversationUpdate(
+      clientId,
+      message.conversationId,
+    );
+
+    if (conversation) {
+      this.realtimePublisher.publishConversationUpdated(
+        clientId,
+        this.toConversationUpdatedPayload(conversation),
+      );
+    }
+  }
+
+  private toConversationUpdatedPayload(conversation: ConversationUpdateRow): {
+    readonly conversationId: string;
+    readonly lastMessageContent: string;
+    readonly lastMessageAt: string;
+    readonly unreadCount: number;
+  } {
+    return {
+      conversationId: conversation.conversationId,
+      lastMessageContent: conversation.lastMessageContent ?? '',
+      lastMessageAt: this.toIso(conversation.lastMessageAt ?? new Date()),
+      unreadCount: conversation.unreadCount,
+    };
   }
 
   private estimatedDelivery(timestamp: Date | string): string {

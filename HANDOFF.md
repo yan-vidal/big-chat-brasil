@@ -94,6 +94,17 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - `packages/shared/src/schemas/message.ts` recebeu `QueueStatusResponseSchema` para o contrato de `GET /queue/status`; a API usa tipo local para não depender de build prévio do `@bcb/shared` durante `test:db`.
   - TDD observado: contrato de queue falhou por schema ausente; specs Supertest falharam por 404/módulos ausentes; depois houve correções guiadas por falha real de runtime (`@bcb/shared` dist stale) e tipagem (`unreadCount` literal).
   - Gates finais verdes: `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm --filter @bcb/api test:db`.
+- **Sprint 6 - WebSocket e simulador de destinatário implementada e verificada** (`feat(api): add authenticated chat websocket`):
+  - Plano detalhado: `docs/superpowers/plans/2026-06-10-sprint-6-websocket-simulator.md`.
+  - `@bcb/api` recebeu `@nestjs/websockets`, `@nestjs/platform-socket.io`, `socket.io` e `socket.io-client` para testes.
+  - `packages/shared/src/schemas/realtime.ts` define os contratos de payload para `message.created`, `message.status`, `conversation.updated`, `typing.started` e `typing.stopped`.
+  - Novo `RealtimeModule` com gateway Socket.IO no namespace `/chat`, handshake JWT via `socket.handshake.auth.token`, sala automática `client:{clientId}` e `conversation.join` autorizado por dono da conversa.
+  - `RealtimePublisher` centraliza emissão para salas e expõe `events$` para testes e integrações internas, evitando acoplamento direto de fila/simulador ao gateway.
+  - `MessagesService` publica `message.created` e `conversation.updated` após persistir mensagem REST; `QueueService` publica `message.status` em `processing`, `sent`, `delivered` e `failed`.
+  - Novo `SimulatorModule` assina eventos `delivered`, respeita `RECIPIENT_SIMULATOR_ENABLED`, `RECIPIENT_SIMULATOR_READ_DELAY_MS` e `RECIPIENT_SIMULATOR_TYPING_MS`, marca mensagens do cliente como `read`, emite typing e cria resposta `senderType='user'` com custo zero.
+  - Testes adicionados: WebSocket autenticado/isolamento/salas, emissão de status pela fila, simulador ligado com resposta/read/typing e simulador desligado.
+  - TDD observado: contrato shared falhou por `Cannot find module './realtime.js'`; specs de API falharam por `RealtimePublisher` ausente; build apontou `processed_at` nullable e foi corrigido nos repositories.
+  - Gates verdes: `pnpm --filter @bcb/shared test -- contracts.spec.ts`, `pnpm --filter @bcb/api test:db` (14 suites, 43 testes), `pnpm --filter @bcb/api build`, `pnpm lint`, `pnpm test`, `pnpm build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e`.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -108,9 +119,9 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 5 e criar o commit sugerido `feat(api): add conversations messages and priority queue`.
-3. Iniciar a **Sprint 6 - WebSocket**.
-4. Antes de codar Sprint 6, gerar plano detalhado em `docs/superpowers/plans/`; incluir gateway `/chat`, handshake JWT, salas por cliente/conversa, eventos `message.created`, `message.status`, `conversation.updated`, `typing.started`, `typing.stopped` e simulador de destinatário com delays zeráveis por env.
+2. Se este bloco ainda não tiver sido commitado, revisar o diff da Sprint 6 e criar o commit sugerido `feat(api): add authenticated chat websocket`.
+3. Iniciar a **Sprint 7 - Shell Angular, rotas, tema e i18n**.
+4. Antes de codar Sprint 7, gerar plano detalhado em `docs/superpowers/plans/`; incluir shell navegável, rotas `/login`, `/onboarding`, `/conversations`, `/conversations/:conversationId`, `/billing`, seletor `pt-BR`/`en-US`, toggle claro/escuro, persistência local e Playwright visual.
 
 ## Skills sugeridas para o próximo agente
 
@@ -143,7 +154,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - `OnboardingGuard` deve proteger conversas/mensagens na Sprint 5. Para billing, só `GET /billing/me` usa esse guard; onboarding e PIX precisam funcionar antes do onboarding completo.
 - Na Sprint 5, não reimplementar débito/limite: chamar `BillingService.chargeMessage()` dentro da transação/fluxo de envio planejado e, em falha pós-cobrança pré-paga, chamar `refundPrepaid()`.
 - `QUEUE_AUTOSTART=false` nos testes mantém mensagens `queued` até o teste chamar `QueueService.processNextForTests()`. Em runtime, o default é autostart ligado.
-- A fila já persiste transições de status, mas ainda não emite eventos. A Sprint 6 deve ouvir/reutilizar essas transições para WebSocket em vez de duplicar processamento.
+- A fila já emite `message.status` via `RealtimePublisher`; não duplicar processamento no frontend. A Sprint 7 deve construir a shell Angular, e a integração Socket.IO do cliente fica para os fluxos de conversa das Sprints 8/9.
+- O simulador de destinatário fica ligado por padrão; em testes que afirmam estados finais da fila, setar `RECIPIENT_SIMULATOR_ENABLED=false`.
 
 ## Pendências que dependem do Yan
 

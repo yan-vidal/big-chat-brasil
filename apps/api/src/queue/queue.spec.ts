@@ -7,9 +7,11 @@ import { getDatabaseUrl } from '../database/database.config.js';
 import { migrateToLatest } from '../database/migrate.js';
 import { seedDatabase } from '../database/seed.js';
 import { resetDatabaseForTests } from '../database/testing.js';
+import { RealtimePublisher } from '../realtime/realtime.publisher.js';
 import { QueueService } from './queue.service.js';
 import type { Database } from '../database/database.types.js';
 import type { Kysely } from 'kysely';
+import type { RealtimeDomainEvent } from '../realtime/realtime.types.js';
 import type { Server } from 'node:http';
 
 const describeDatabase = process.env.BCB_RUN_DB_TESTS === 'true' ? describe : describe.skip;
@@ -28,11 +30,13 @@ describeDatabase('queue HTTP API and processor', () => {
   let db: Kysely<Database>;
   let server: Server;
   let queueService: QueueService;
+  let realtimePublisher: RealtimePublisher;
 
   beforeEach(async () => {
     process.env.QUEUE_AUTOSTART = 'false';
     process.env.QUEUE_SENT_DELAY_MS = '0';
     process.env.QUEUE_DELIVERED_DELAY_MS = '0';
+    process.env.RECIPIENT_SIMULATOR_ENABLED = 'false';
     db = createDatabase(getDatabaseUrl());
     await resetDatabaseForTests(db);
     await migrateToLatest(db);
@@ -45,6 +49,7 @@ describeDatabase('queue HTTP API and processor', () => {
     delete process.env.QUEUE_AUTOSTART;
     delete process.env.QUEUE_SENT_DELAY_MS;
     delete process.env.QUEUE_DELIVERED_DELAY_MS;
+    delete process.env.RECIPIENT_SIMULATOR_ENABLED;
   });
 
   async function initApp(): Promise<void> {
@@ -56,6 +61,7 @@ describeDatabase('queue HTTP API and processor', () => {
     await app.init();
     server = app.getHttpServer() as Server;
     queueService = app.get(QueueService);
+    realtimePublisher = app.get(RealtimePublisher);
   }
 
   async function createSession(
@@ -129,6 +135,8 @@ describeDatabase('queue HTTP API and processor', () => {
 
   it('processes urgent messages before normal messages and advances status to delivered', async () => {
     await initApp();
+    const events: RealtimeDomainEvent[] = [];
+    const subscription = realtimePublisher.events$.subscribe((event) => events.push(event));
     const session = await createSession('11222333000181', 'CNPJ');
     const conversationId = await firstEmpresaConversation(session);
     const normalId = await sendMessage(session, conversationId, 'normal', 'Mensagem normal');
@@ -150,6 +158,23 @@ describeDatabase('queue HTTP API and processor', () => {
       .expect(({ body }) => {
         expect(body.status).toBe('queued');
       });
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'message.status',
+          payload: expect.objectContaining({ messageId: urgentId, status: 'processing' }),
+        }),
+        expect.objectContaining({
+          name: 'message.status',
+          payload: expect.objectContaining({ messageId: urgentId, status: 'sent' }),
+        }),
+        expect.objectContaining({
+          name: 'message.status',
+          payload: expect.objectContaining({ messageId: urgentId, status: 'delivered' }),
+        }),
+      ]),
+    );
+    subscription.unsubscribe();
   });
 
   it('applies anti-starvation after three urgent messages', async () => {

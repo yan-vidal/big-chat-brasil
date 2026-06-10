@@ -25,6 +25,13 @@ export type MessageStatusRow = {
   readonly occurredAt: Date | string;
 };
 
+export type ConversationUpdateRow = {
+  readonly conversationId: string;
+  readonly lastMessageContent: string | null;
+  readonly lastMessageAt: Date | string | null;
+  readonly unreadCount: number;
+};
+
 @Injectable()
 export class MessagesRepository {
   constructor(private readonly database: DatabaseService) {}
@@ -165,5 +172,22 @@ export class MessagesRepository {
             }
           : undefined,
       );
+  }
+
+  async findConversationUpdate(
+    clientId: string,
+    conversationId: string,
+  ): Promise<ConversationUpdateRow | undefined> {
+    return this.database.db
+      .selectFrom('conversations')
+      .select([
+        'id as conversationId',
+        'last_message_content as lastMessageContent',
+        'last_message_at as lastMessageAt',
+        'unread_count as unreadCount',
+      ])
+      .where('id', '=', conversationId)
+      .where('client_id', '=', clientId)
+      .executeTakeFirst();
   }
 }

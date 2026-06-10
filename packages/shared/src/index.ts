@@ -7,3 +7,4 @@ export * from './schemas/common.js';
 export * from './schemas/conversation.js';
 export * from './schemas/message.js';
 export * from './schemas/onboarding.js';
+export * from './schemas/realtime.js';

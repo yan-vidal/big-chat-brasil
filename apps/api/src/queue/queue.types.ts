@@ -1,4 +1,4 @@
-import type { MessagePriority } from '@bcb/shared';
+import type { MessagePriority, MessageStatus } from '@bcb/shared';
 
 export type QueueJob = {
   readonly messageId: string;
@@ -15,4 +15,12 @@ export type QueueStatus = {
   readonly processing: boolean;
   readonly processedCount: number;
   readonly failedCount: number;
+};
+
+export type QueueMessageStatusUpdate = {
+  readonly clientId: string;
+  readonly messageId: string;
+  readonly conversationId: string;
+  readonly status: MessageStatus;
+  readonly occurredAt: Date | string;
 };
