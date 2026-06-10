@@ -28,7 +28,7 @@ test.describe('full-stack chat flow', () => {
     const sentBubble = page.getByTestId('message-bubble').filter({ hasText: messageContent });
     await expect(sentBubble).toBeVisible();
     await expect(sentBubble.getByText('Urgente', { exact: true })).toBeVisible();
-    await expect(sentBubble.getByText('Na fila')).toBeVisible();
+    await expect(sentBubble.getByText(/Na fila|Processando|Enviada|Entregue|Lida/)).toBeVisible();
     await expect(sentBubble.getByText(/Entregue|Lida/)).toBeVisible({ timeout: 15_000 });
 
     await expect(page.getByText('Maria está escrevendo...')).toBeVisible({ timeout: 15_000 });

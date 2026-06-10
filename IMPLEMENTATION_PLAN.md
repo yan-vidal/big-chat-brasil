@@ -606,7 +606,7 @@ Tarefas:
 - Criar testes Playwright do fluxo completo.
 - Ajustar docker compose para ambiente limpo: a API roda `db:migrate` e `db:seed` automaticamente no start em Docker (entrypoint), para que `git clone && docker compose up` funcione sem passos manuais.
 - Criar README de execução com: tecnologias e versões, passo a passo, tabela de credenciais demo (Sprint 2), tabela de aderência ao contrato do desafio e premissas (seção deste plano), decisões e limitações, trabalho futuro.
-- Opcional: Swagger/OpenAPI.
+- Swagger/OpenAPI em `/docs` e `/docs-json`, com teste que falha se endpoint novo entrar sem documentação.
 
 Verificação:
 

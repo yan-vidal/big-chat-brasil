@@ -17,6 +17,8 @@ Depois acesse:
 
 - Web: `http://localhost:4200`
 - API healthcheck: `http://localhost:3000/health`
+- Swagger UI: `http://localhost:3000/docs`
+- OpenAPI JSON: `http://localhost:3000/docs-json`
 
 Na inicialização, a API executa automaticamente `db:migrate` e `db:seed`. Isso deixa o banco pronto para demonstração sem passos manuais.
 
@@ -57,6 +59,7 @@ Também é possível entrar com um CPF/CNPJ válido novo e senha qualquer. A con
 - Fila em memória com prioridade urgente e anti-starvation.
 - Socket.IO autenticado para status, novas mensagens, atualização de conversa e digitação.
 - Simulador de destinatário que marca mensagens como lidas, mostra digitação e responde.
+- Swagger/OpenAPI gerado pela API, com schemas e teste para manter endpoints documentados.
 
 ## Stack
 
@@ -103,6 +106,8 @@ pnpm --filter @bcb/api test:db
 
 ## Endpoints Principais
 
+- `GET /docs`
+- `GET /docs-json`
 - `POST /auth/session`
 - `GET /auth/me`
 - `POST /billing/onboarding`
@@ -133,7 +138,6 @@ pnpm --filter @bcb/api test:db
 
 - Sem paginação real de mensagens; o MVP retorna as últimas mensagens da conversa.
 - Sem broker externo para fila; Redis/RabbitMQ seria o próximo passo para produção.
-- Sem Swagger/OpenAPI.
 - `apps/web` ainda não tem runner unitário/component real; a cobertura de frontend está nos testes Playwright.
 - O servidor web Docker usa um servidor estático Node simples, não Nginx.
 

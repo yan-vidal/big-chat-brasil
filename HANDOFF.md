@@ -156,6 +156,15 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - A suíte Playwright mockada agora sobe o servidor estático em `4210` e força `--api-base-url=` para não reutilizar o web Docker de `4200` nem herdar `BCB_API_BASE_URL`.
   - Verificação: RED reproduzido com `pnpm test:e2e:fullstack` ficando preso em `/login`; depois `docker compose build web` passou, `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web` recriou o web, e checagem dentro do container retornou HTTP `200` com `window.__BCB_RUNTIME_CONFIG__` e `http://localhost:3002` no HTML.
   - Gates verdes finais: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack` (1 teste), `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (11 testes), `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm format:check`, `docker compose config`, `API_PUBLISHED_PORT=3002 docker compose config`.
+- **OpenAPI/Swagger implementado**:
+  - Dependências adicionadas à API: `@nestjs/swagger`, `class-transformer`, `class-validator`.
+  - `apps/api/src/openapi/openapi.ts` expõe Swagger UI em `/docs` e JSON em `/docs-json`, configurado no bootstrap da API.
+  - `apps/api/src/openapi/openapi.schemas.ts` centraliza os schemas OpenAPI, reutilizando os arrays de enums exportados por `@bcb/shared`.
+  - `apps/api/src/openapi/openapi.spec.ts` gera o documento a partir do `AppModule` real e valida paths, bearer auth, schemas críticos e metadata mínima (`summary`, `tags`, `responses`) em toda operação. Endpoint novo sem documentação deve quebrar esse teste.
+  - `README.md` agora documenta `/docs` e `/docs-json`; `IMPLEMENTATION_PLAN.md` deixou Swagger/OpenAPI de opcional e registrou o teste de sincronização.
+  - O full-stack spec foi estabilizado para aceitar qualquer status válido inicial da mensagem (`Na fila|Processando|Enviada|Entregue|Lida`), porque `Na fila` é transitório e pode ser perdido quando a fila avança rápido; a exigência de chegar a `Entregue` ou `Lida` continua.
+  - Verificação Docker: `docker compose build api` passou; `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate api` recriou a API; chamadas internas do container para `/docs` e `/docs-json` retornaram HTTP `200`, com título `Big Chat Brasil API`, `/auth/session` e bearer auth no JSON.
+  - Gates verdes: `pnpm --filter @bcb/api test -- openapi.spec.ts`, `pnpm --filter @bcb/api build`, `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm format:check`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack`.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -170,8 +179,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Se o hotfix de API base runtime ainda não tiver sido commitado, revisar o diff e criar um commit pequeno, sugerido `fix(web): read api base url from docker runtime config`.
-3. Com Sprint 10 commitada, fazer uma revisão final de entrega: checar README do ponto de vista do avaliador, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
+2. Se o bloco OpenAPI ainda não tiver sido commitado, revisar o diff e criar um commit pequeno, sugerido `docs(api): add swagger openapi contract`.
+3. Com OpenAPI commitado, fazer uma revisão final de entrega: checar README do ponto de vista do avaliador, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
 4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado.
 
 ## Skills sugeridas para o próximo agente
@@ -215,6 +224,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - O e2e full-stack deve rodar pelo script/config dedicado (`pnpm test:e2e:fullstack`); não colocar `full-stack.spec.ts` de volta na suíte mockada padrão.
 - Nesta máquina, a porta host `3000` estava ocupada pelo container externo `pokedex_api`; a validação Docker local usa `API_PUBLISHED_PORT=3002`. Depois do hotfix, não use mais `E2E_API_BASE_URL` nem console do navegador para esse caso.
 - Logs de navegador com `console-log.service.ts`, `background.js`, `Fido2Client`, `SignalR`, `triggerAutofillScriptInjection` e chamadas para `hidden42gate.yanlucas.com` são de extensão do browser/perfil local, não do BCB. Testar em perfil limpo/incógnito com extensões desativadas remove esse ruído.
+- Ao adicionar/alterar endpoint REST, atualizar `OPENAPI_OPERATIONS` e `OPENAPI_SCHEMAS`; `pnpm --filter @bcb/api test -- openapi.spec.ts` deve falhar se a documentação não acompanhar a rota.
 
 ## Pendências que dependem do Yan
 
