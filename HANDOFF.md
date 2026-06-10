@@ -214,6 +214,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - Em Playwright web, mocks de API devem mirar `http://localhost:3000/...`; padrões amplos como `**/conversations` interceptam a navegação SPA do servidor estático e retornam JSON como documento.
 - O e2e full-stack deve rodar pelo script/config dedicado (`pnpm test:e2e:fullstack`); não colocar `full-stack.spec.ts` de volta na suíte mockada padrão.
 - Nesta máquina, a porta host `3000` estava ocupada pelo container externo `pokedex_api`; a validação Docker local usa `API_PUBLISHED_PORT=3002`. Depois do hotfix, não use mais `E2E_API_BASE_URL` nem console do navegador para esse caso.
+- Logs de navegador com `console-log.service.ts`, `background.js`, `Fido2Client`, `SignalR`, `triggerAutofillScriptInjection` e chamadas para `hidden42gate.yanlucas.com` são de extensão do browser/perfil local, não do BCB. Testar em perfil limpo/incógnito com extensões desativadas remove esse ruído.
 
 ## Pendências que dependem do Yan
 
