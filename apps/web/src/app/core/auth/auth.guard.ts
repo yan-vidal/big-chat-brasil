@@ -21,6 +21,24 @@ export const onboardingGuard: CanActivateFn = () => {
   return session.onboardingCompleted() ? true : router.createUrlTree(['/onboarding']);
 };
 
+export const onboardingSetupGuard: CanActivateFn = () => {
+  const session = inject(SessionStore);
+  const router = inject(Router);
+  session.refreshFromStorage();
+
+  if (!session.authenticated()) {
+    return router.createUrlTree(['/login']);
+  }
+
+  if (session.requiresOnboarding()) {
+    return true;
+  }
+
+  return session.isAdmin()
+    ? router.createUrlTree(['/admin'])
+    : router.createUrlTree(['/conversations']);
+};
+
 export const adminGuard: CanActivateFn = () => {
   const session = inject(SessionStore);
   const router = inject(Router);

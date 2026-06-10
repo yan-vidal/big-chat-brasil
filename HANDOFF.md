@@ -210,6 +210,13 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - Validação Docker adicional: login direto em `http://localhost:3002/auth/session` com `00000000000`/`Admin@123` retornou HTTP `201`, `role='admin'`, `documentId='00000000000'` e `requiresOnboarding=false`.
   - Validação visual adicional: screenshots Playwright do painel admin Docker em desktop e mobile (`/tmp/bcb-admin-docker.png`, `/tmp/bcb-admin-mobile-docker.png`) confirmaram heading, 5 linhas de tabela e layout sem sobreposição óbvia depois do ajuste no grid do formulário "Novo cliente".
   - Estado operacional ao fechar o bloco: stack Docker ficou rodando para demo local, com API em `localhost:3002`, web em `localhost:4200`, DB healthy em `5432` e worker ativo.
+- **Hotfix web - onboarding só aparece quando a sessão ainda precisa configurar plano**:
+  - Pedido do Yan: a tela/aba de onboarding só deve existir para usuário novo sem configuração; ao logar ou já estar logado em conta existente, a aba deve sumir do header e `/onboarding` não deve ficar acessível.
+  - `SessionStore` ganhou `requiresOnboarding`, o header renderiza o link `Onboarding` apenas quando essa flag está ativa, e a rota `/onboarding` usa `onboardingSetupGuard` para redirecionar sessão já configurada para `/conversations` ou admin para `/admin`.
+  - TDD observado: `apps/web/e2e/shell.spec.ts` falhou primeiro porque o link continuava visível para conta ativa; depois passou com o novo comportamento.
+  - Gates verdes: `pnpm --filter @bcb/web build`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/shell.spec.ts` (4 testes), `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (15 testes), `pnpm lint`, `pnpm test`, `pnpm format:check`, `pnpm build`.
+  - Docker local atualizado: `docker compose build web` e `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; checagem Playwright contra `localhost:4200` retornou `activeOnboardingLinks=0`, `activeRedirect=/conversations`, `pendingOnboardingLinks=1`.
+  - Estado operacional ao fechar o hotfix: stack Docker segue rodando para demo local com API em `localhost:3002`, web em `localhost:4200`, DB healthy e worker ativo.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -224,7 +231,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. Confirmar se o bloco admin aparece no log como `feat(admin): add management console`; se não aparecer, revisar o diff deste bloco e commitar antes de seguir.
+2. Confirmar se o hotfix do onboarding aparece no log como `fix(web): hide onboarding after setup`; se não aparecer, revisar o diff deste bloco e commitar antes de seguir.
 3. Fazer uma revisão final de entrega: checar README do ponto de vista do avaliador, validar Docker/full-stack em ambiente limpo, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
 4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado, e worker separado, conversa entre contas reais e painel admin foram tratados como melhorias técnicas/demonstração.
 

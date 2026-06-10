@@ -16,6 +16,11 @@ export class SessionStore {
   readonly session = this.sessionSignal.asReadonly();
   readonly authenticated = computed(() => this.sessionSignal() !== null);
   readonly isAdmin = computed(() => this.sessionSignal()?.client.role === 'admin');
+  readonly requiresOnboarding = computed(() => {
+    const session = this.sessionSignal();
+
+    return Boolean(session?.requiresOnboarding && !session.client.onboardingCompleted);
+  });
   readonly onboardingCompleted = computed(() => {
     const session = this.sessionSignal();
 
