@@ -1,0 +1,50 @@
+{
+  "shell": {
+    "subtitle": "Chat operations with priority queue",
+    "languageLabel": "Language",
+    "primaryNavigation": "Primary",
+    "darkTheme": "Dark theme",
+    "lightTheme": "Light theme"
+  },
+  "nav": {
+    "login": "Access",
+    "onboarding": "Onboarding",
+    "conversations": "Conversations",
+    "billing": "Billing"
+  },
+  "auth": {
+    "kicker": "Identification",
+    "title": "Client access",
+    "description": "CPF or CNPJ sign-in with password. Real account creation and authentication arrive in the next block.",
+    "next": "After authentication, new clients continue to plan activation.",
+    "onboardingLink": "Go to onboarding"
+  },
+  "onboarding": {
+    "kicker": "Activation",
+    "title": "Onboarding",
+    "description": "Plan choice and simulated payment will be connected to the backend in the next flow sprint.",
+    "prepaid": "Prepaid with initial credit through simulated PIX.",
+    "postpaid": "Postpaid with configurable monthly limit."
+  },
+  "conversations": {
+    "kicker": "Support",
+    "title": "Conversations",
+    "description": "Initial list ready to receive API data and realtime events.",
+    "demoName": "Maria Oliveira",
+    "demoPreview": "Open deep conversation route"
+  },
+  "conversation": {
+    "kicker": "Conversation",
+    "title": "Support thread",
+    "description": "Base screen for history, message status and realtime typing.",
+    "routeId": "Conversation ID",
+    "back": "Back to conversations"
+  },
+  "billing": {
+    "kicker": "Finance",
+    "title": "Billing",
+    "description": "Balance, limit and history summary will be connected to the billing endpoint.",
+    "prepaid": "Prepaid: available balance and top-ups.",
+    "postpaid": "Postpaid: monthly usage and remaining limit."
+  }
+}

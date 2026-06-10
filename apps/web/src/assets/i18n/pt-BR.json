@@ -1,0 +1,50 @@
+{
+  "shell": {
+    "subtitle": "Operação de chat com fila prioritária",
+    "languageLabel": "Idioma",
+    "primaryNavigation": "Principal",
+    "darkTheme": "Tema escuro",
+    "lightTheme": "Tema claro"
+  },
+  "nav": {
+    "login": "Acesso",
+    "onboarding": "Onboarding",
+    "conversations": "Conversas",
+    "billing": "Cobrança"
+  },
+  "auth": {
+    "kicker": "Identificação",
+    "title": "Acesso do cliente",
+    "description": "Entrada por CPF ou CNPJ com senha. A criação e autenticação reais entram no próximo bloco.",
+    "next": "Após autenticar, clientes novos seguem para ativação de plano.",
+    "onboardingLink": "Ir para onboarding"
+  },
+  "onboarding": {
+    "kicker": "Ativação",
+    "title": "Onboarding",
+    "description": "Escolha de plano e pagamento simulado serão conectados ao backend na próxima sprint de fluxo.",
+    "prepaid": "Pré-pago com crédito inicial via PIX simulado.",
+    "postpaid": "Pós-pago com limite mensal configurável."
+  },
+  "conversations": {
+    "kicker": "Atendimento",
+    "title": "Conversas",
+    "description": "Lista inicial pronta para receber dados da API e eventos em tempo real.",
+    "demoName": "Maria Oliveira",
+    "demoPreview": "Abrir rota profunda de conversa"
+  },
+  "conversation": {
+    "kicker": "Conversa",
+    "title": "Atendimento",
+    "description": "Tela base para histórico, status de mensagem e digitação em tempo real.",
+    "routeId": "ID da conversa",
+    "back": "Voltar para conversas"
+  },
+  "billing": {
+    "kicker": "Financeiro",
+    "title": "Cobrança",
+    "description": "Resumo de saldo, limite e histórico será conectado ao endpoint de billing.",
+    "prepaid": "Pré-pago: saldo disponível e recargas.",
+    "postpaid": "Pós-pago: consumo mensal e limite restante."
+  }
+}
