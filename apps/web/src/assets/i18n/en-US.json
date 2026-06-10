@@ -103,8 +103,36 @@
   "billing": {
     "kicker": "Finance",
     "title": "Billing",
-    "description": "Balance, limit and history summary will be connected to the billing endpoint.",
-    "prepaid": "Prepaid: available balance and top-ups.",
-    "postpaid": "Postpaid: monthly usage and remaining limit."
+    "description": "Current financial summary for plan, usage and transactions.",
+    "loading": "Loading billing...",
+    "planLabel": "Plan",
+    "prepaidPlan": "Prepaid plan",
+    "postpaidPlan": "Postpaid plan",
+    "balanceLabel": "Available balance",
+    "monthlyLimitLabel": "Monthly limit",
+    "monthlyUsedLabel": "Used this month",
+    "remainingLabel": "Remaining",
+    "usageMonthLabel": "Usage month",
+    "transactionsTitle": "Transaction history",
+    "typeHeader": "Type",
+    "amountHeader": "Amount",
+    "referenceHeader": "Source",
+    "createdHeader": "Created at",
+    "emptyTransactions": "No transactions recorded.",
+    "references": {
+      "payment": "PIX",
+      "message": "Message",
+      "manual": "Manual"
+    },
+    "transactionTypes": {
+      "credit": "Credit",
+      "debit": "Debit",
+      "usage": "Usage",
+      "refund": "Refund",
+      "adjustment": "Adjustment"
+    },
+    "errors": {
+      "loadFailed": "Could not load billing."
+    }
   }
 }

@@ -103,8 +103,36 @@
   "billing": {
     "kicker": "Financeiro",
     "title": "Cobrança",
-    "description": "Resumo de saldo, limite e histórico será conectado ao endpoint de billing.",
-    "prepaid": "Pré-pago: saldo disponível e recargas.",
-    "postpaid": "Pós-pago: consumo mensal e limite restante."
+    "description": "Resumo financeiro atual do plano, consumo e transações.",
+    "loading": "Carregando cobrança...",
+    "planLabel": "Plano",
+    "prepaidPlan": "Plano Pré-pago",
+    "postpaidPlan": "Plano Pós-pago",
+    "balanceLabel": "Saldo disponível",
+    "monthlyLimitLabel": "Limite mensal",
+    "monthlyUsedLabel": "Usado no mês",
+    "remainingLabel": "Restante",
+    "usageMonthLabel": "Mês de uso",
+    "transactionsTitle": "Histórico de transações",
+    "typeHeader": "Tipo",
+    "amountHeader": "Valor",
+    "referenceHeader": "Origem",
+    "createdHeader": "Criado em",
+    "emptyTransactions": "Nenhuma transação registrada.",
+    "references": {
+      "payment": "PIX",
+      "message": "Mensagem",
+      "manual": "Manual"
+    },
+    "transactionTypes": {
+      "credit": "Crédito",
+      "debit": "Débito",
+      "usage": "Uso",
+      "refund": "Estorno",
+      "adjustment": "Ajuste"
+    },
+    "errors": {
+      "loadFailed": "Não foi possível carregar a cobrança."
+    }
   }
 }
