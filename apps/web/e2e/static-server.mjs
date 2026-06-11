@@ -10,6 +10,7 @@ const port = Number(readArg('--port') ?? 4200);
 const host = process.env.WEB_HOST ?? '127.0.0.1';
 const runtimeConfig = {
   apiBaseUrl: readArg('--api-base-url') ?? process.env.BCB_API_BASE_URL,
+  realtimeBaseUrl: readArg('--realtime-base-url') ?? process.env.BCB_REALTIME_BASE_URL,
 };
 
 const contentTypes = new Map([

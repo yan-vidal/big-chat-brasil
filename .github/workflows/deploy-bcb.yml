@@ -1,0 +1,152 @@
+name: Deploy BCB
+
+on:
+  push:
+    branches: ['main', 'bcb-fullstack-mvp']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate source
+        run: |
+          pnpm format:check
+          pnpm lint
+          pnpm test
+          pnpm build
+
+      - name: Build API Docker image
+        timeout-minutes: 15
+        run: docker build --target api -t bcb-api:${{ github.sha }} -t bcb-api:latest .
+
+      - name: Build worker Docker image
+        timeout-minutes: 15
+        run: docker build --target worker -t bcb-worker:${{ github.sha }} -t bcb-worker:latest .
+
+      - name: Build web Docker image
+        timeout-minutes: 15
+        run: docker build --target web -t bcb-web:${{ github.sha }} -t bcb-web:latest .
+
+      - name: Save Docker images
+        timeout-minutes: 8
+        run: |
+          docker save \
+            bcb-api:${{ github.sha }} bcb-api:latest \
+            bcb-worker:${{ github.sha }} bcb-worker:latest \
+            bcb-web:${{ github.sha }} bcb-web:latest \
+            | gzip > bcb-images.tar.gz
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bcb-images
+          path: bcb-images.tar.gz
+          retention-days: 1
+
+  deploy-archlinux:
+    needs: build
+    runs-on: [self-hosted, archlinux]
+    environment: production
+    env:
+      API_PUBLISHED_PORT: '3020'
+      WEB_PUBLISHED_PORT: '4220'
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bcb-images
+          path: bcb-images
+
+      - name: Load Docker images
+        timeout-minutes: 8
+        run: |
+          gzip -dc bcb-images/bcb-images.tar.gz | docker load
+          docker image inspect bcb-api:latest
+          docker image inspect bcb-worker:latest
+          docker image inspect bcb-web:latest
+
+      - name: Write production environment
+        env:
+          BCB_DB_PASSWORD: ${{ secrets.BCB_DB_PASSWORD }}
+          BCB_JWT_SECRET: ${{ secrets.BCB_JWT_SECRET }}
+          BCB_ADMIN_PASSWORD: ${{ secrets.BCB_ADMIN_PASSWORD }}
+          BCB_INTERNAL_API_TOKEN: ${{ secrets.BCB_INTERNAL_API_TOKEN }}
+        run: |
+          test -n "$BCB_DB_PASSWORD"
+          test -n "$BCB_JWT_SECRET"
+          test -n "$BCB_ADMIN_PASSWORD"
+          test -n "$BCB_INTERNAL_API_TOKEN"
+
+          cat > .env <<EOF
+          POSTGRES_USER=bcb
+          POSTGRES_PASSWORD=$BCB_DB_PASSWORD
+          POSTGRES_DB=bcb
+          DATABASE_URL=postgres://bcb:$BCB_DB_PASSWORD@db:5432/bcb
+
+          JWT_SECRET=$BCB_JWT_SECRET
+          JWT_EXPIRES_IN=1d
+          BCB_ADMIN_PASSWORD=$BCB_ADMIN_PASSWORD
+          INTERNAL_API_TOKEN=$BCB_INTERNAL_API_TOKEN
+
+          CORS_ORIGIN=https://bcb.yanlucas.com
+          BCB_API_BASE_URL=https://bcb.yanlucas.com/api
+          BCB_REALTIME_BASE_URL=https://bcb.yanlucas.com
+
+          API_PUBLISHED_PORT=$API_PUBLISHED_PORT
+          WEB_PUBLISHED_PORT=$WEB_PUBLISHED_PORT
+
+          QUEUE_POLL_INTERVAL_MS=250
+          QUEUE_SENT_DELAY_MS=500
+          QUEUE_DELIVERED_DELAY_MS=1000
+          RECIPIENT_SIMULATOR_ENABLED=true
+          RECIPIENT_SIMULATOR_READ_DELAY_MS=1500
+          RECIPIENT_SIMULATOR_TYPING_MS=2000
+          EOF
+
+      - name: Deploy containers
+        timeout-minutes: 12
+        run: docker compose -f docker-compose.prod.yml up -d db api worker web
+
+      - name: Smoke test
+        timeout-minutes: 3
+        run: |
+          for i in {1..30}; do
+            if curl -fsS "http://127.0.0.1:${API_PUBLISHED_PORT}/health" >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS "http://127.0.0.1:${API_PUBLISHED_PORT}/health"
+          curl -fsS "http://127.0.0.1:${WEB_PUBLISHED_PORT}" >/dev/null
+
+      - name: Show Docker status on failure
+        if: ${{ failure() }}
+        run: |
+          docker compose -f docker-compose.prod.yml ps
+          docker compose -f docker-compose.prod.yml logs --tail=200 db api worker web
+
+      - name: Cleanup Docker images
+        run: docker image prune -f

@@ -289,6 +289,16 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - RED confirmado: chat falhou primeiro mostrando `Não foi possível enviar a mensagem.`; auth falhou primeiro mostrando `Não foi possível autenticar com esses dados`; depois ambos passaram após o parser central.
   - Gates verdes: `git diff --check`, `pnpm format:check`, `pnpm lint`, `pnpm build`, `pnpm test`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/auth-onboarding.spec.ts e2e/chat.spec.ts e2e/i18n.spec.ts` (12 testes), `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (24 testes).
   - Docker local atualizado: `docker compose build web`, `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; `curl -I http://127.0.0.1:4200` retornou `HTTP/1.1 200 OK`, `curl -I http://127.0.0.1:3002/auth/me` retornou `401 Unauthorized` com CORS para `localhost:4200`, e os dois testes de erro do chat passaram contra `localhost:4200` com config Playwright temporária usando `localStorage['bcb.api.baseUrl']='http://localhost:3000'` para os mocks; config removida após a validação.
+- **Deploy - preparar bcb.yanlucas.com com frontend em container**:
+  - Pedido do Yan: subir o projeto no servidor em `bcb.yanlucas.com`, tomando como base o padrão Arateki (build no GitHub + artefatos/imagens para runner self-hosted) e mantendo `docker compose up --build` local funcionando em um comando.
+  - Decisão: produção usa containers para `api`, `worker`, `web` e `db`; o `docker-compose.yml` local/dev não foi trocado. O novo `docker-compose.prod.yml` usa imagens `bcb-api:latest`, `bcb-worker:latest` e `bcb-web:latest` já carregadas no servidor.
+  - `docker-compose.prod.yml` publica apenas loopback: API em `127.0.0.1:3020`, web em `127.0.0.1:4220`, Postgres sem porta host. Secrets vêm de `.env`.
+  - `.github/workflows/deploy-bcb.yml` roda em push para `main` ou `bcb-fullstack-mvp` e também por `workflow_dispatch`; o job `build` executa `pnpm format:check`, `pnpm lint`, `pnpm test`, `pnpm build`, constrói imagens Docker para `api`, `worker` e `web`, salva tudo em `bcb-images.tar.gz`; o job `deploy-archlinux` faz `docker load`, escreve `.env` com secrets `BCB_DB_PASSWORD`, `BCB_JWT_SECRET`, `BCB_ADMIN_PASSWORD`, `BCB_INTERNAL_API_TOKEN`, sobe `docker compose -f docker-compose.prod.yml up -d db api worker web` e roda smoke test em `3020/health` e `4220`.
+  - `DEPLOY_BCB.md` documenta secrets, portas, validação manual e bloco Nginx para `bcb.yanlucas.com`, com `/api/` proxyando para `3020`, `/socket.io/` para Socket.IO e `/` para o web container em `4220`.
+  - Importante: API REST em `/api` evita conflito entre rotas Angular (`/conversations/:id`) e endpoints REST (`GET /conversations/:id`). Para manter Socket.IO no namespace `/chat`, `apps/web/src/app/core/api/api-client.service.ts` ganhou `realtimeUrl()`, `apps/web/src/app/features/chat/chat-realtime.service.ts` passou a usar esse método, e `apps/web/e2e/static-server.mjs` injeta `BCB_REALTIME_BASE_URL` além de `BCB_API_BASE_URL`.
+  - `.env.production.example` lista as variáveis de produção; `.env.example` ganhou `BCB_REALTIME_BASE_URL=http://localhost:3000`; README aponta para `DEPLOY_BCB.md`.
+  - Gates verdes: `POSTGRES_PASSWORD=prodtest DATABASE_URL=postgres://bcb:prodtest@db:5432/bcb JWT_SECRET=jwt BCB_ADMIN_PASSWORD=admin INTERNAL_API_TOKEN=internal docker compose -f docker-compose.prod.yml config`, `pnpm format:check`, `git diff --check`, `pnpm lint`, `pnpm build`, `pnpm test`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (24 testes), `docker build --target web -t bcb-web:deploy-check .`.
+  - Validação runtime: container temporário `bcb-web:deploy-check` em `127.0.0.1:4221` retornou HTML com `window.__BCB_RUNTIME_CONFIG__={"apiBaseUrl":"https://bcb.yanlucas.com/api","realtimeBaseUrl":"https://bcb.yanlucas.com"}`; container temporário foi parado.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -303,8 +313,8 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. O hotfix atual deve aparecer no log como `fix(web): surface backend api errors`.
-3. Fazer uma revisão final de entrega: checar README e `docs/challenge-compliance.md` do ponto de vista do avaliador, validar Docker/full-stack em ambiente limpo, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
+2. O deploy atual deve aparecer no log como `chore(deploy): add bcb production workflow`.
+3. No servidor, garantir que o Nginx tenha o bloco de `DEPLOY_BCB.md`, que os secrets do ambiente `production` existam no GitHub e que o runner self-hosted `archlinux` esteja online antes de disparar o workflow.
 4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado. Se quiser maximizar aderência literal aos endpoints sugeridos, o próximo bloco opcional é adicionar aliases `/auth`, `/clients` e `GET /messages` sem mudar o fluxo principal.
 
 ## Skills sugeridas para o próximo agente
@@ -343,6 +353,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
 - A shell web agora usa sessão real em `bcb.session`. Não voltar para as chaves provisórias `bcb.session.active`/`bcb.onboarding.completed`.
 - `apps/web` ainda não tem runner unitário real; `pnpm test` segue placeholder. A cobertura efetiva das Sprints 7/8/9 está em Playwright visual/rotas/preferências/fluxos HTTP mockados e eventos realtime injetados.
 - O `ApiClientService` usa `localStorage['bcb.api.baseUrl']` como override manual, depois `window.__BCB_RUNTIME_CONFIG__.apiBaseUrl` injetado pelo web Docker, e só então o fallback `http://localhost:3000`.
+- Para produção em `bcb.yanlucas.com`, REST deve usar `BCB_API_BASE_URL=https://bcb.yanlucas.com/api`, mas Socket.IO deve usar `BCB_REALTIME_BASE_URL=https://bcb.yanlucas.com`; não apontar o namespace `/chat` para `/api/chat`.
 - `pnpm test:e2e` usa `127.0.0.1:4210` para não conflitar com o web Docker manual em `4200`.
 - Em Playwright web, mocks de API devem mirar `http://localhost:3000/...`; padrões amplos como `**/conversations` interceptam a navegação SPA do servidor estático e retornam JSON como documento.
 - O e2e full-stack deve rodar pelo script/config dedicado (`pnpm test:e2e:fullstack`); não colocar `full-stack.spec.ts` de volta na suíte mockada padrão.
