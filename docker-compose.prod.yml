@@ -1,0 +1,84 @@
+name: bcb
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bcb}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-bcb}
+    volumes:
+      - bcb-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: bcb-api:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      BCB_ADMIN_PASSWORD: ${BCB_ADMIN_PASSWORD:?BCB_ADMIN_PASSWORD is required}
+      API_PORT: 3000
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://bcb.yanlucas.com}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN is required}
+      QUEUE_PROCESSOR_ENABLED: 'false'
+      QUEUE_SENT_DELAY_MS: ${QUEUE_SENT_DELAY_MS:-500}
+      QUEUE_DELIVERED_DELAY_MS: ${QUEUE_DELIVERED_DELAY_MS:-1000}
+      RECIPIENT_SIMULATOR_ENABLED: ${RECIPIENT_SIMULATOR_ENABLED:-true}
+      RECIPIENT_SIMULATOR_READ_DELAY_MS: ${RECIPIENT_SIMULATOR_READ_DELAY_MS:-1500}
+      RECIPIENT_SIMULATOR_TYPING_MS: ${RECIPIENT_SIMULATOR_TYPING_MS:-2000}
+    ports:
+      - '127.0.0.1:${API_PUBLISHED_PORT:-3020}:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3000/health'').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    image: bcb-worker:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      INTERNAL_API_BASE_URL: http://api:3000
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN is required}
+      QUEUE_PROCESSOR_ENABLED: 'true'
+      QUEUE_STATUS_PUBLISHER: http
+      QUEUE_POLL_INTERVAL_MS: ${QUEUE_POLL_INTERVAL_MS:-250}
+      QUEUE_SENT_DELAY_MS: ${QUEUE_SENT_DELAY_MS:-500}
+      QUEUE_DELIVERED_DELAY_MS: ${QUEUE_DELIVERED_DELAY_MS:-1000}
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  web:
+    image: bcb-web:latest
+    restart: unless-stopped
+    environment:
+      BCB_API_BASE_URL: ${BCB_API_BASE_URL:-https://bcb.yanlucas.com/api}
+      BCB_REALTIME_BASE_URL: ${BCB_REALTIME_BASE_URL:-https://bcb.yanlucas.com}
+    ports:
+      - '127.0.0.1:${WEB_PUBLISHED_PORT:-4220}:4200'
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  bcb-postgres-data:

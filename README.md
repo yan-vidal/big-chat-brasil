@@ -176,4 +176,5 @@ Variáveis principais:
 - Plano mestre: [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 - Arquitetura: [`docs/architecture-plan.md`](./docs/architecture-plan.md)
 - Estratégia de testes: [`docs/testing-strategy.md`](./docs/testing-strategy.md)
+- Deploy em `bcb.yanlucas.com`: [`DEPLOY_BCB.md`](./DEPLOY_BCB.md)
 - Especificação original do desafio: [`docs/fullstack.md`](./docs/fullstack.md)

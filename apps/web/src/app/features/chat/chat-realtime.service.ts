@@ -56,7 +56,7 @@ export class ChatRealtimeService implements OnDestroy {
       return;
     }
 
-    this.socket = io(this.api.url('/chat'), {
+    this.socket = io(this.api.realtimeUrl('/chat'), {
       auth: { token },
       transports: ['websocket', 'polling'],
     });
