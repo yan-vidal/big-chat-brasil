@@ -140,6 +140,13 @@ jobs:
           done
 
           curl -fsS "http://127.0.0.1:${API_PUBLISHED_PORT}/health"
+          for i in {1..30}; do
+            if curl -fsS "http://127.0.0.1:${WEB_PUBLISHED_PORT}" >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
           curl -fsS "http://127.0.0.1:${WEB_PUBLISHED_PORT}" >/dev/null
 
       - name: Show Docker status on failure
