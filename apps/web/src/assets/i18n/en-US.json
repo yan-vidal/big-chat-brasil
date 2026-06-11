@@ -1,0 +1,222 @@
+{
+  "shell": {
+    "subtitle": "Chat operations with priority queue",
+    "languageLabel": "Language",
+    "primaryNavigation": "Primary",
+    "darkTheme": "Dark theme",
+    "lightTheme": "Light theme"
+  },
+  "nav": {
+    "login": "Access",
+    "onboarding": "Onboarding",
+    "conversations": "Conversations",
+    "billing": "Billing",
+    "admin": "Administration",
+    "logout": "Sign out"
+  },
+  "admin": {
+    "kicker": "Administration",
+    "title": "Administration",
+    "description": "Operational management of clients, plans, credits and limits.",
+    "create": {
+      "title": "New client",
+      "documentLabel": "New client document",
+      "nameLabel": "New client name",
+      "passwordLabel": "New client password",
+      "planLabel": "Plan",
+      "initialBalanceLabel": "Initial balance (cents)",
+      "monthlyLimitLabel": "Initial monthly limit (cents)",
+      "submit": "Create client"
+    },
+    "quickActions": {
+      "title": "Quick actions"
+    },
+    "credit": {
+      "clientLabel": "Prepaid client",
+      "amountLabel": "Prepaid credit (cents)",
+      "submit": "Add credit"
+    },
+    "limit": {
+      "clientLabel": "Postpaid client",
+      "amountLabel": "New postpaid limit (cents)",
+      "submit": "Update limit"
+    },
+    "convert": {
+      "clientLabel": "Client to convert",
+      "planLabel": "New plan",
+      "balanceLabel": "Balance when converting to prepaid (cents)",
+      "limitLabel": "Monthly limit when converting to postpaid (cents)",
+      "submit": "Convert plan"
+    },
+    "table": {
+      "name": "Name",
+      "document": "Document",
+      "role": "Role",
+      "plan": "Plan",
+      "status": "Status",
+      "financial": "Financial",
+      "actions": "Actions"
+    },
+    "plans": {
+      "prepaid": "Prepaid",
+      "postpaid": "Postpaid"
+    },
+    "roles": {
+      "admin": "admin",
+      "client": "client"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "readOnly": "Read only"
+    },
+    "financial": {
+      "balance": "Balance {{amount}}",
+      "limitUsage": "Limit {{limit}} · Used {{used}}"
+    },
+    "feedback": {
+      "clientCreated": "Client created",
+      "creditAdded": "Credit added",
+      "limitUpdated": "Limit updated",
+      "statusUpdated": "Status updated",
+      "planConverted": "Plan converted"
+    },
+    "errors": {
+      "loadFailed": "Could not load clients",
+      "createFailed": "Could not create the client",
+      "noPrepaidClient": "No prepaid client available",
+      "creditFailed": "Could not add credit",
+      "noPostpaidClient": "No postpaid client available",
+      "limitFailed": "Could not update limit",
+      "statusFailed": "Could not update status",
+      "noConvertibleClient": "No client available for conversion",
+      "convertFailed": "Could not convert plan"
+    }
+  },
+  "auth": {
+    "kicker": "Identification",
+    "title": "Client access",
+    "description": "CPF or CNPJ sign-in with password. New clients continue to plan activation.",
+    "documentLabel": "Document",
+    "passwordLabel": "Password",
+    "submit": "Sign in",
+    "loading": "Processing",
+    "errors": {
+      "invalidDocument": "Invalid document",
+      "requestFailed": "Could not authenticate with those credentials"
+    }
+  },
+  "onboarding": {
+    "kicker": "Activation",
+    "title": "Onboarding",
+    "description": "Choose the plan and finish account activation.",
+    "nameLabel": "Name",
+    "planLabel": "Plan",
+    "prepaidOption": "Prepaid",
+    "postpaidOption": "Postpaid",
+    "initialCreditLabel": "Initial credit",
+    "monthlyLimitLabel": "Monthly limit",
+    "generatePix": "Generate PIX",
+    "activatePlan": "Activate plan",
+    "pixPending": "Simulated PIX pending",
+    "confirmPix": "I already paid",
+    "errors": {
+      "invalidForm": "Fill in the plan data",
+      "requestFailed": "Could not activate the plan"
+    }
+  },
+  "conversations": {
+    "kicker": "Support",
+    "title": "Conversations",
+    "description": "Recent history with priority, read state and operating balance.",
+    "balance": "Balance {{amount}}",
+    "limit": "Limit {{limit}} · Remaining {{remaining}}",
+    "newConversation": "New conversation",
+    "recipientLabel": "Recipient",
+    "initialMessageLabel": "Initial message",
+    "sendNewConversation": "Send new conversation",
+    "searchLabel": "Search conversations",
+    "listLabel": "Conversation list",
+    "loading": "Loading conversations...",
+    "emptyMessage": "No messages yet",
+    "emptySearch": "No conversations found.",
+    "unread": "{{count}} unread",
+    "feedback": {
+      "newConversationSent": "Initial message sent"
+    },
+    "errors": {
+      "loadFailed": "Could not load conversations.",
+      "invalidNewConversation": "Fill in the recipient and message.",
+      "newConversationFailed": "Could not send the initial message.",
+      "recipientsFailed": "Could not load recipients."
+    }
+  },
+  "conversation": {
+    "kicker": "Conversation",
+    "loadingTitle": "Loading...",
+    "back": "Back",
+    "typing": "{{name}} is typing...",
+    "historyLabel": "Conversation history",
+    "loading": "Loading messages...",
+    "empty": "There are no messages in this conversation yet.",
+    "messageLabel": "Message",
+    "priorityLabel": "Priority",
+    "normalPriority": "Normal",
+    "urgentPriority": "Urgent",
+    "send": "Send",
+    "balance": "Balance {{amount}}",
+    "remaining": "Remaining {{amount}}",
+    "errors": {
+      "invalidMessage": "Enter a valid message.",
+      "sendFailed": "Could not send the message.",
+      "loadFailed": "Could not load this conversation."
+    },
+    "status": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "read": "Read",
+      "failed": "Failed"
+    }
+  },
+  "billing": {
+    "kicker": "Finance",
+    "title": "Billing",
+    "description": "Current financial summary for plan, usage and transactions.",
+    "loading": "Loading billing...",
+    "planLabel": "Plan",
+    "prepaidPlan": "Prepaid plan",
+    "postpaidPlan": "Postpaid plan",
+    "balanceLabel": "Available balance",
+    "monthlyLimitLabel": "Monthly limit",
+    "monthlyUsedLabel": "Used this month",
+    "remainingLabel": "Remaining",
+    "usageMonthLabel": "Usage month",
+    "transactionsTitle": "Transaction history",
+    "typeHeader": "Type",
+    "amountHeader": "Amount",
+    "referenceHeader": "Source",
+    "createdHeader": "Created at",
+    "emptyTransactions": "No transactions recorded.",
+    "references": {
+      "payment": "PIX",
+      "message": "Message",
+      "manual": "Manual"
+    },
+    "transactionTypes": {
+      "credit": "Credit",
+      "debit": "Debit",
+      "usage": "Usage",
+      "refund": "Refund",
+      "adjustment": "Adjustment"
+    },
+    "errors": {
+      "loadFailed": "Could not load billing."
+    }
+  }
+}

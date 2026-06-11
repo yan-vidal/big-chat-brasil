@@ -1,0 +1,222 @@
+{
+  "shell": {
+    "subtitle": "Operação de chat com fila prioritária",
+    "languageLabel": "Idioma",
+    "primaryNavigation": "Principal",
+    "darkTheme": "Tema escuro",
+    "lightTheme": "Tema claro"
+  },
+  "nav": {
+    "login": "Acesso",
+    "onboarding": "Onboarding",
+    "conversations": "Conversas",
+    "billing": "Cobrança",
+    "admin": "Administração",
+    "logout": "Sair"
+  },
+  "admin": {
+    "kicker": "Administração",
+    "title": "Administração",
+    "description": "Gerenciamento operacional de clientes, planos, créditos e limites.",
+    "create": {
+      "title": "Novo cliente",
+      "documentLabel": "Documento do novo cliente",
+      "nameLabel": "Nome do novo cliente",
+      "passwordLabel": "Senha do novo cliente",
+      "planLabel": "Plano",
+      "initialBalanceLabel": "Saldo inicial (centavos)",
+      "monthlyLimitLabel": "Limite mensal inicial (centavos)",
+      "submit": "Criar cliente"
+    },
+    "quickActions": {
+      "title": "Ações rápidas"
+    },
+    "credit": {
+      "clientLabel": "Cliente pré-pago",
+      "amountLabel": "Crédito pré-pago (centavos)",
+      "submit": "Adicionar crédito"
+    },
+    "limit": {
+      "clientLabel": "Cliente pós-pago",
+      "amountLabel": "Novo limite pós-pago (centavos)",
+      "submit": "Atualizar limite"
+    },
+    "convert": {
+      "clientLabel": "Cliente para converter",
+      "planLabel": "Novo plano",
+      "balanceLabel": "Saldo ao converter para pré-pago (centavos)",
+      "limitLabel": "Limite mensal ao converter para pós-pago (centavos)",
+      "submit": "Converter plano"
+    },
+    "table": {
+      "name": "Nome",
+      "document": "Documento",
+      "role": "Role",
+      "plan": "Plano",
+      "status": "Status",
+      "financial": "Financeiro",
+      "actions": "Ações"
+    },
+    "plans": {
+      "prepaid": "Pré-pago",
+      "postpaid": "Pós-pago"
+    },
+    "roles": {
+      "admin": "admin",
+      "client": "cliente"
+    },
+    "status": {
+      "active": "Ativo",
+      "inactive": "Inativo"
+    },
+    "actions": {
+      "activate": "Ativar",
+      "deactivate": "Inativar",
+      "readOnly": "Somente leitura"
+    },
+    "financial": {
+      "balance": "Saldo {{amount}}",
+      "limitUsage": "Limite {{limit}} · Usado {{used}}"
+    },
+    "feedback": {
+      "clientCreated": "Cliente criado",
+      "creditAdded": "Crédito adicionado",
+      "limitUpdated": "Limite atualizado",
+      "statusUpdated": "Status atualizado",
+      "planConverted": "Plano convertido"
+    },
+    "errors": {
+      "loadFailed": "Não foi possível carregar clientes",
+      "createFailed": "Não foi possível criar o cliente",
+      "noPrepaidClient": "Nenhum cliente pré-pago disponível",
+      "creditFailed": "Não foi possível adicionar crédito",
+      "noPostpaidClient": "Nenhum cliente pós-pago disponível",
+      "limitFailed": "Não foi possível atualizar limite",
+      "statusFailed": "Não foi possível atualizar status",
+      "noConvertibleClient": "Nenhum cliente disponível para conversão",
+      "convertFailed": "Não foi possível converter plano"
+    }
+  },
+  "auth": {
+    "kicker": "Identificação",
+    "title": "Acesso do cliente",
+    "description": "Entrada por CPF ou CNPJ com senha. Clientes novos seguem para ativação do plano.",
+    "documentLabel": "Documento",
+    "passwordLabel": "Senha",
+    "submit": "Entrar",
+    "loading": "Processando",
+    "errors": {
+      "invalidDocument": "Documento inválido",
+      "requestFailed": "Não foi possível autenticar com esses dados"
+    }
+  },
+  "onboarding": {
+    "kicker": "Ativação",
+    "title": "Onboarding",
+    "description": "Escolha o plano e conclua a ativação da conta.",
+    "nameLabel": "Nome",
+    "planLabel": "Plano",
+    "prepaidOption": "Pré-pago",
+    "postpaidOption": "Pós-pago",
+    "initialCreditLabel": "Crédito inicial",
+    "monthlyLimitLabel": "Limite mensal",
+    "generatePix": "Gerar PIX",
+    "activatePlan": "Ativar plano",
+    "pixPending": "PIX simulado pendente",
+    "confirmPix": "Já paguei",
+    "errors": {
+      "invalidForm": "Preencha os dados do plano",
+      "requestFailed": "Não foi possível ativar o plano"
+    }
+  },
+  "conversations": {
+    "kicker": "Atendimento",
+    "title": "Conversas",
+    "description": "Histórico recente com prioridade, leitura e saldo operacional.",
+    "balance": "Saldo {{amount}}",
+    "limit": "Limite {{limit}} · Restante {{remaining}}",
+    "newConversation": "Nova conversa",
+    "recipientLabel": "Destinatário",
+    "initialMessageLabel": "Mensagem inicial",
+    "sendNewConversation": "Enviar nova conversa",
+    "searchLabel": "Buscar conversa",
+    "listLabel": "Lista de conversas",
+    "loading": "Carregando conversas...",
+    "emptyMessage": "Sem mensagens ainda",
+    "emptySearch": "Nenhuma conversa encontrada.",
+    "unread": "{{count}} não lidas",
+    "feedback": {
+      "newConversationSent": "Mensagem inicial enviada"
+    },
+    "errors": {
+      "loadFailed": "Não foi possível carregar as conversas.",
+      "invalidNewConversation": "Preencha destinatário e mensagem.",
+      "newConversationFailed": "Não foi possível enviar a mensagem inicial.",
+      "recipientsFailed": "Não foi possível carregar os destinatários."
+    }
+  },
+  "conversation": {
+    "kicker": "Conversa",
+    "loadingTitle": "Carregando...",
+    "back": "Voltar",
+    "typing": "{{name}} está escrevendo...",
+    "historyLabel": "Histórico da conversa",
+    "loading": "Carregando mensagens...",
+    "empty": "Ainda não há mensagens nesta conversa.",
+    "messageLabel": "Mensagem",
+    "priorityLabel": "Prioridade",
+    "normalPriority": "Normal",
+    "urgentPriority": "Urgente",
+    "send": "Enviar",
+    "balance": "Saldo {{amount}}",
+    "remaining": "Restante {{amount}}",
+    "errors": {
+      "invalidMessage": "Digite uma mensagem válida.",
+      "sendFailed": "Não foi possível enviar a mensagem.",
+      "loadFailed": "Não foi possível carregar esta conversa."
+    },
+    "status": {
+      "queued": "Na fila",
+      "processing": "Processando",
+      "sent": "Enviada",
+      "delivered": "Entregue",
+      "read": "Lida",
+      "failed": "Falhou"
+    }
+  },
+  "billing": {
+    "kicker": "Financeiro",
+    "title": "Cobrança",
+    "description": "Resumo financeiro atual do plano, consumo e transações.",
+    "loading": "Carregando cobrança...",
+    "planLabel": "Plano",
+    "prepaidPlan": "Plano Pré-pago",
+    "postpaidPlan": "Plano Pós-pago",
+    "balanceLabel": "Saldo disponível",
+    "monthlyLimitLabel": "Limite mensal",
+    "monthlyUsedLabel": "Usado no mês",
+    "remainingLabel": "Restante",
+    "usageMonthLabel": "Mês de uso",
+    "transactionsTitle": "Histórico de transações",
+    "typeHeader": "Tipo",
+    "amountHeader": "Valor",
+    "referenceHeader": "Origem",
+    "createdHeader": "Criado em",
+    "emptyTransactions": "Nenhuma transação registrada.",
+    "references": {
+      "payment": "PIX",
+      "message": "Mensagem",
+      "manual": "Manual"
+    },
+    "transactionTypes": {
+      "credit": "Crédito",
+      "debit": "Débito",
+      "usage": "Uso",
+      "refund": "Estorno",
+      "adjustment": "Ajuste"
+    },
+    "errors": {
+      "loadFailed": "Não foi possível carregar a cobrança."
+    }
+  }
+}

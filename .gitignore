@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+.angular/
+.turbo/
+.nx/
+.env
+.env.local
+.DS_Store
+npm-debug.log*
+pnpm-debug.log*
+playwright-report/
+playwright-report-fullstack/
+test-results/

@@ -1,89 +1,179 @@
-# Teste Técnico - Big Chat Brasil (BCB)
+# Big Chat Brasil
 
-Olá candidato(a), seja bem-vindo ao teste técnico BCB - Big Chat Brasil.
+Implementação fullstack do desafio técnico BCB: autenticação por CPF/CNPJ, onboarding de plano, cobrança pré/pós-paga, fila de mensagens com prioridade, WebSocket com simulador de destinatário e interface Angular de chat.
 
-**Prazo:** Até nossa call marcada para DATA+HORA  
-**Entrega:** Repositório público no GitHub (envie o link por e-mail ou WhatsApp)
+## Como Rodar
 
-## Resumo do Desafio
+Requisitos:
 
-Desenvolva a plataforma "Big Chat Brasil", um sistema simples para envio e visualização de mensagens entre empresas e seus clientes:
+- Docker com Docker Compose.
+- Portas livres por padrão: `3000` API, `4200` web, `5432` Postgres.
 
-| Perfil | Desafio Principal | Foco da Avaliação |
-|--------|-------------------|-------------------|
-| **Backend** | [Sistema de filas para chat](./docs/backend.md) | Estruturas de dados, filas de prioridade, concorrência |
-| **Frontend** | [Interface de chat](./docs/frontend.md) | UI/UX, interação, experiência do usuário |
-| **Fullstack** | [Aplicação básica de chat](./docs/fullstack.md) | Integração entre camadas, fluxo de comunicação |
+```bash
+docker compose up --build
+```
 
-Escolha o perfil que melhor se adequa às suas habilidades e acesse a documentação específica para seu perfil clicando no link correspondente.
+Depois acesse:
 
-## Sobre o Projeto
+- Web: `http://localhost:4200`
+- API healthcheck: `http://localhost:3000/health`
+- Swagger UI: `http://localhost:3000/docs`
+- OpenAPI JSON: `http://localhost:3000/docs-json`
 
-O **BCB – Big Chat Brasil** é uma plataforma de chat que permite a empresas conversarem com seus clientes através de uma interface intuitiva, oferecendo:
-- Chat para comunicação entre empresa e clientes
-- Sistema de pagamento por mensagem (pré-pago e pós-pago)
-- Dois tipos de prioridade de mensagens (normal e urgente)
-- Interface interativa similar a aplicativos populares de mensagens
+Na inicialização, a API executa automaticamente `db:migrate` e `db:seed`. Isso deixa o banco pronto para demonstração sem passos manuais.
+O Compose também sobe um serviço `worker` separado para processar a fila de mensagens; a API apenas persiste a mensagem e emite eventos realtime quando o worker chama a ponte interna.
+A senha da conta admin inicial vem de `BCB_ADMIN_PASSWORD` e, no Docker Compose, usa `Admin@123` como fallback (`${BCB_ADMIN_PASSWORD:-Admin@123}`).
 
-[Leia mais sobre as regras de negócio](./docs/regras-negocio.md)
+Para encerrar e apagar o banco local:
 
-## Estrutura da Documentação
+```bash
+docker compose down --volumes
+```
 
-**Comece aqui**: Escolha o perfil que melhor se adequa a você e leia a documentação correspondente:
+Se a porta `3000` já estiver ocupada, a API pode ser publicada em outra porta:
 
-| Perfil | Documento Principal | Conteúdo |
-|--------|---------------------|----------|
-| **Backend** | [Guia Backend](./docs/backend.md) | Sistema de filas, APIs, regras de processamento |
-| **Frontend** | [Guia Frontend](./docs/frontend.md) | Interface de chat, componentes, comunicação |
-| **Fullstack** | [Guia Fullstack](./docs/fullstack.md) | Integração entre camadas, fluxo completo |
+```bash
+API_PUBLISHED_PORT=3002 docker compose up --build
+```
 
-**Documentos de Apoio**:
-- [Regras de Negócio](./docs/regras-negocio.md) - Detalhamento das regras do sistema
-- [Requisitos Técnicos](./docs/requisitos-tecnicos.md) - Tecnologias, entregas e requisitos mínimos
-- [Dicas e FAQ](./docs/dicas.md) - Recomendações e perguntas frequentes
+O web Docker recebe essa porta automaticamente e passa a chamar `http://localhost:3002`.
 
-## O Que Entregar (Resumo)
+## Credenciais Demo
 
-Para todos os perfis:
-- Repositório Git com a solução
-- Docker-compose para executar o projeto (fortemente recomendado)
-- README.md com:
-  - Tecnologias utilizadas
-  - Instruções de instalação/execução
-  - Decisões técnicas e limitações
-  - Funcionalidades implementadas
+| Perfil              | Documento        | Tipo | Senha                               | Observação                        |
+| ------------------- | ---------------- | ---- | ----------------------------------- | --------------------------------- |
+| Admin               | `00000000000`    | CPF  | `BCB_ADMIN_PASSWORD` ou `Admin@123` | Painel `/admin` e endpoints admin |
+| Empresa ABC         | `11222333000181` | CNPJ | `Demo@123`                          | Pré-pago, saldo inicial R$25      |
+| Pré-pago sem saldo  | `11144477735`    | CPF  | `Demo@123`                          | Exercita saldo insuficiente       |
+| Pós-pago com limite | `11444777000161` | CNPJ | `Demo@123`                          | Limite mensal R$100               |
+| Pós-pago no limite  | `12345678909`    | CPF  | `Demo@123`                          | Exercita limite insuficiente      |
 
-Cada perfil tem requisitos mínimos específicos detalhados no documento correspondente.
+Também é possível entrar com um CPF/CNPJ válido novo e senha qualquer. A conta é criada automaticamente e segue para o onboarding. O CPF especial `00000000000` é reservado exclusivamente para a conta admin seedada.
 
-Veja os [requisitos técnicos completos](./docs/requisitos-tecnicos.md) para mais detalhes.
+## Funcionalidades
 
-## Critérios de Avaliação
+- Login por documento e senha, com validação de CPF/CNPJ.
+- Login único para cliente e admin; o backend define a `role` no JWT e o frontend apenas redireciona pelo retorno da sessão.
+- Painel administrativo em `/admin` para listar contas, criar clientes, ativar/inativar, adicionar crédito, alterar limite pós-pago e converter plano.
+- Auto-registro de novo cliente.
+- Onboarding pré-pago com PIX simulado e pós-pago com limite mensal.
+- Listagem de conversas, busca, badges de não lidas e criação de nova conversa com recipients simulados ou contas reais.
+- Tela de conversa com histórico, bolhas, status, prioridade normal/urgente e composer.
+- Interface com i18n em português, inglês e espanhol, com preferência persistida.
+- Conversa real entre contas CPF/CNPJ onboarded: a mensagem aparece no inbox do destinatário logado e pode receber resposta pela mesma tela.
+- Cobrança por mensagem: normal `R$0,25`, urgente `R$0,50`.
+- Fila processada por worker separado, com prioridade urgente, anti-starvation, polling do banco e recuperação de mensagens pendentes.
+- Socket.IO autenticado para status, novas mensagens, atualização de conversa e digitação.
+- Simulador de destinatário que marca mensagens como lidas, mostra digitação e responde.
+- Swagger/OpenAPI gerado pela API, com schemas e teste para manter endpoints documentados.
 
-Avaliaremos principalmente:
-1. **Qualidade e organização do código**
-2. **Implementação correta das regras de negócio**
-3. **Execução do desafio principal do seu perfil**
-4. **Decisões técnicas e arquiteturais**
+## Stack
 
-Cada documento específico de perfil contém critérios detalhados de avaliação, com pesos e exemplos para diferentes níveis de complexidade de implementação.
+- Node.js `22`
+- pnpm `10.33`
+- TypeScript `6.0`
+- NestJS `11`
+- PostgreSQL `17`
+- Kysely `0.29`
+- Angular `22`
+- Tailwind CSS `4`
+- Socket.IO `4`
+- Jest, Vitest e Playwright
 
-## Preparação para a Entrevista de Live-Coding
+## Comandos de Desenvolvimento
 
-Após a entrega do teste, teremos uma entrevista de live-coding onde:
-- Você apresentará sua solução e abordagem
-- Discutiremos decisões técnicas e tradeoffs
-- Faremos pequenas modificações no código para avaliar sua adaptabilidade
-- Esclareceremos dúvidas sobre a implementação
+Instalação local:
 
-**Dica**: Esteja preparado para explicar suas escolhas e demonstrar seu raciocínio. Revise seu código antes da entrevista.
+```bash
+pnpm install
+```
 
-## Importante
+Gates principais:
 
-- **Prazo flexível**: Informe-nos se precisar de mais tempo
-- **Priorize qualidade**: Uma solução parcial bem estruturada é melhor que uma solução completa desorganizada
-- **Documente suas decisões**: Explique o que foi implementado e o que ficou como trabalho futuro
-- **Pergunte se tiver dúvidas**: Estamos disponíveis para esclarecer qualquer aspecto do teste
+```bash
+pnpm lint
+pnpm test
+pnpm build
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e
+```
 
-Para uma lista completa de perguntas frequentes, consulte o [FAQ](./docs/dicas.md#faq---perguntas-frequentes).
+Teste full-stack contra a stack Docker:
 
-Boa sorte!
+```bash
+docker compose up --build
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e:fullstack
+```
+
+Testes de banco da API, com Postgres disponível:
+
+```bash
+pnpm --filter @bcb/api test:db
+```
+
+## Endpoints Principais
+
+- `GET /docs`
+- `GET /docs-json`
+- `POST /auth/session`
+- `GET /auth/me`
+- `GET /admin/clients`
+- `POST /admin/clients`
+- `PATCH /admin/clients/:id/status`
+- `POST /admin/clients/:id/credits`
+- `PATCH /admin/clients/:id/limit`
+- `POST /admin/clients/:id/plan`
+- `POST /billing/onboarding`
+- `POST /billing/pix-intents`
+- `POST /billing/pix-intents/:id/confirm`
+- `GET /billing/me`
+- `GET /recipients`
+- `GET /conversations`
+- `GET /conversations/:id`
+- `GET /conversations/:id/messages`
+- `POST /conversations/:id/read`
+- `POST /messages`
+- `GET /messages/:id/status`
+- `GET /queue/status`
+- Socket.IO namespace `/chat`
+
+## Worker da Fila
+
+No Docker, a fila roda fora do processo HTTP:
+
+- `api`: recebe requisições, persiste mensagens `queued`, mantém Socket.IO e simulador de destinatário.
+- `worker`: faz polling de mensagens `queued`/`processing` no PostgreSQL, aplica prioridade e avança status `processing -> sent -> delivered`.
+- Ponte interna: o worker chama `POST /internal/realtime/message-status` no API usando `x-internal-token`; o API publica o evento Socket.IO e aciona o simulador.
+
+Variáveis principais:
+
+- `BCB_ADMIN_PASSWORD` define a senha da conta admin `00000000000`; no Compose, o fallback é `Admin@123`.
+- `QUEUE_PROCESSOR_ENABLED=false` no API Docker evita processamento local.
+- `QUEUE_STATUS_PUBLISHER=http` no worker usa a ponte interna.
+- `QUEUE_POLL_INTERVAL_MS=250` define a frequência de descoberta de mensagens novas.
+- `INTERNAL_API_BASE_URL=http://api:3000` aponta o worker para o API na rede Docker.
+- `INTERNAL_API_TOKEN` protege a ponte interna; em produção, trocar o default.
+
+## Decisões e Premissas
+
+- Kysely foi escolhido para manter SQL explícito e controle de transações.
+- Dinheiro é sempre armazenado em centavos inteiros.
+- `recipients` é o catálogo unificado: rows sem `client_profile_id` são contatos simulados; rows com `client_profile_id` representam contas reais logáveis.
+- A fila usa estruturas em memória dentro do worker, mas a fonte de verdade é o PostgreSQL; mensagens `queued`/`processing` são recuperadas no boot e por polling.
+- O reset mensal pós-pago é preguiçoso, feito no uso.
+- O seed roda no start da API em Docker para privilegiar demonstração reprodutível. Reiniciar a API reseta os dados demo.
+- O frontend usa `http://localhost:3000` como fallback. No Docker, o web injeta a URL pública da API via `BCB_API_BASE_URL`; em desenvolvimento local, ainda é possível sobrescrever por `localStorage['bcb.api.baseUrl']`.
+- O WebSocket usa JWT no handshake e salas por cliente/conversa.
+
+## Limitações Conhecidas
+
+- Sem paginação real de mensagens; o MVP retorna as últimas mensagens da conversa.
+- Sem broker externo para fila; Redis/RabbitMQ ou pub/sub compartilhado seria o próximo passo para produção.
+- `apps/web` ainda não tem runner unitário/component real; a cobertura de frontend está nos testes Playwright.
+- O servidor web Docker usa um servidor estático Node simples, não Nginx.
+
+## Documentação de Apoio
+
+- Plano mestre: [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
+- Arquitetura: [`docs/architecture-plan.md`](./docs/architecture-plan.md)
+- Estratégia de testes: [`docs/testing-strategy.md`](./docs/testing-strategy.md)
+- Especificação original do desafio: [`docs/fullstack.md`](./docs/fullstack.md)

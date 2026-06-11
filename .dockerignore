@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+dist
+coverage
+test-results
+playwright-report
+playwright-report-fullstack
+.git
+.agents
+.codex
+.worktrees
+Dockerfile
+*.log
+.env
