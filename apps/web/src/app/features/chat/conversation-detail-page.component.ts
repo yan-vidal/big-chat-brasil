@@ -11,6 +11,7 @@ import {
   type MessageStatus,
 } from '@bcb/shared';
 import { firstValueFrom, type Subscription } from 'rxjs';
+import { apiErrorMessage } from '../../core/api/api-errors';
 import { ChatApiService } from './chat-api.service';
 import { ChatRealtimeService, type ChatRealtimeEvent } from './chat-realtime.service';
 
@@ -227,8 +228,8 @@ export class ConversationDetailPageComponent implements OnInit, OnDestroy {
       this.updatePrepaidBalance(response.currentBalance);
       this.messageForm.controls.content.setValue('');
       this.messageForm.controls.priority.setValue('normal');
-    } catch {
-      this.sendError.set('conversation.errors.sendFailed');
+    } catch (error) {
+      this.sendError.set(apiErrorMessage(error, 'conversation.errors.sendFailed'));
     } finally {
       this.sending.set(false);
     }
@@ -287,8 +288,8 @@ export class ConversationDetailPageComponent implements OnInit, OnDestroy {
       this.messages.set(messages);
       this.billing.set(billing);
       await firstValueFrom(this.chatApi.markConversationRead(this.conversationId));
-    } catch {
-      this.error.set('conversation.errors.loadFailed');
+    } catch (error) {
+      this.error.set(apiErrorMessage(error, 'conversation.errors.loadFailed'));
     } finally {
       this.loading.set(false);
     }

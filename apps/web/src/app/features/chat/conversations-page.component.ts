@@ -9,6 +9,7 @@ import {
   type RecipientResponse,
 } from '@bcb/shared';
 import { firstValueFrom, type Subscription } from 'rxjs';
+import { apiErrorMessage } from '../../core/api/api-errors';
 import { ChatApiService } from './chat-api.service';
 import { ChatRealtimeService, type ChatRealtimeEvent } from './chat-realtime.service';
 
@@ -96,6 +97,11 @@ import { ChatRealtimeService, type ChatRealtimeEvent } from './chat-realtime.ser
               {{ newConversationFeedback()! | translate }}
             </p>
           }
+          @if (newConversationError()) {
+            <p class="text-sm font-medium text-red-700 dark:text-red-300" role="alert">
+              {{ newConversationError()! | translate }}
+            </p>
+          }
         </form>
       }
 
@@ -176,6 +182,7 @@ export class ConversationsPageComponent implements OnInit, OnDestroy {
   protected readonly newConversationOpen = signal(false);
   protected readonly sendingNewConversation = signal(false);
   protected readonly newConversationFeedback = signal<string | null>(null);
+  protected readonly newConversationError = signal<string | null>(null);
   protected readonly filteredConversations = computed(() => {
     const term = this.searchTerm().trim().toLocaleLowerCase('pt-BR');
 
@@ -217,6 +224,7 @@ export class ConversationsPageComponent implements OnInit, OnDestroy {
     const nextOpen = !this.newConversationOpen();
     this.newConversationOpen.set(nextOpen);
     this.newConversationFeedback.set(null);
+    this.newConversationError.set(null);
 
     if (nextOpen && this.recipients().length === 0) {
       await this.loadRecipients();
@@ -225,6 +233,7 @@ export class ConversationsPageComponent implements OnInit, OnDestroy {
 
   protected async sendNewConversation(): Promise<void> {
     this.newConversationFeedback.set(null);
+    this.newConversationError.set(null);
 
     const requestResult = SendMessageRequestSchema.safeParse({
       recipientId: this.newConversationForm.controls.recipientId.value,
@@ -233,7 +242,7 @@ export class ConversationsPageComponent implements OnInit, OnDestroy {
     });
 
     if (!requestResult.success) {
-      this.newConversationFeedback.set('conversations.feedback.invalidNewConversation');
+      this.newConversationError.set('conversations.errors.invalidNewConversation');
       return;
     }
 
@@ -244,8 +253,10 @@ export class ConversationsPageComponent implements OnInit, OnDestroy {
       this.newConversationForm.controls.content.setValue('');
       this.newConversationFeedback.set('conversations.feedback.newConversationSent');
       await this.loadConversations();
-    } catch {
-      this.newConversationFeedback.set('conversations.feedback.newConversationFailed');
+    } catch (error) {
+      this.newConversationError.set(
+        apiErrorMessage(error, 'conversations.errors.newConversationFailed'),
+      );
     } finally {
       this.sendingNewConversation.set(false);
     }
@@ -291,8 +302,8 @@ export class ConversationsPageComponent implements OnInit, OnDestroy {
     try {
       this.conversations.set(await firstValueFrom(this.chatApi.listConversations()));
       this.error.set(null);
-    } catch {
-      this.error.set('conversations.errors.loadFailed');
+    } catch (error) {
+      this.error.set(apiErrorMessage(error, 'conversations.errors.loadFailed'));
     }
   }
 
@@ -301,8 +312,10 @@ export class ConversationsPageComponent implements OnInit, OnDestroy {
       const recipients = await firstValueFrom(this.chatApi.listRecipients());
       this.recipients.set(recipients);
       this.newConversationForm.controls.recipientId.setValue(recipients[0]?.id ?? '');
-    } catch {
-      this.newConversationFeedback.set('conversations.feedback.recipientsFailed');
+    } catch (error) {
+      this.newConversationError.set(
+        apiErrorMessage(error, 'conversations.errors.recipientsFailed'),
+      );
     }
   }
 

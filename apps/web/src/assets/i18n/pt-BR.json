@@ -146,13 +146,13 @@
     "emptySearch": "Nenhuma conversa encontrada.",
     "unread": "{{count}} não lidas",
     "feedback": {
-      "invalidNewConversation": "Preencha destinatário e mensagem.",
-      "newConversationSent": "Mensagem inicial enviada",
-      "newConversationFailed": "Não foi possível enviar a mensagem inicial.",
-      "recipientsFailed": "Não foi possível carregar os destinatários."
+      "newConversationSent": "Mensagem inicial enviada"
     },
     "errors": {
-      "loadFailed": "Não foi possível carregar as conversas."
+      "loadFailed": "Não foi possível carregar as conversas.",
+      "invalidNewConversation": "Preencha destinatário e mensagem.",
+      "newConversationFailed": "Não foi possível enviar a mensagem inicial.",
+      "recipientsFailed": "Não foi possível carregar os destinatários."
     }
   },
   "conversation": {

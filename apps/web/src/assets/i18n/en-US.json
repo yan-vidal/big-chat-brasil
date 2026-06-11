@@ -146,13 +146,13 @@
     "emptySearch": "No conversations found.",
     "unread": "{{count}} unread",
     "feedback": {
-      "invalidNewConversation": "Fill in the recipient and message.",
-      "newConversationSent": "Initial message sent",
-      "newConversationFailed": "Could not send the initial message.",
-      "recipientsFailed": "Could not load recipients."
+      "newConversationSent": "Initial message sent"
     },
     "errors": {
-      "loadFailed": "Could not load conversations."
+      "loadFailed": "Could not load conversations.",
+      "invalidNewConversation": "Fill in the recipient and message.",
+      "newConversationFailed": "Could not send the initial message.",
+      "recipientsFailed": "Could not load recipients."
     }
   },
   "conversation": {

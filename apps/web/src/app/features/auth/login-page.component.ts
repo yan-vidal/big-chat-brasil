@@ -10,6 +10,7 @@ import {
   type DocumentType,
 } from '@bcb/shared';
 import { firstValueFrom } from 'rxjs';
+import { apiErrorMessage } from '../../core/api/api-errors';
 import { AuthApiService } from '../../core/auth/auth-api.service';
 import { SessionStore } from '../../core/auth/session.store';
 
@@ -117,8 +118,8 @@ export class LoginPageComponent {
       const session = await firstValueFrom(this.authApi.createSession(request));
       this.sessionStore.setSession(session);
       await this.router.navigateByUrl(this.redirectPathFor(session));
-    } catch {
-      this.errorKey.set('auth.errors.requestFailed');
+    } catch (error) {
+      this.errorKey.set(apiErrorMessage(error, 'auth.errors.requestFailed'));
     } finally {
       this.loading.set(false);
     }

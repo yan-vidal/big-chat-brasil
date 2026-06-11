@@ -10,6 +10,7 @@ import {
   type PlanType,
 } from '@bcb/shared';
 import { firstValueFrom } from 'rxjs';
+import { apiErrorMessage } from '../../core/api/api-errors';
 import { SessionStore } from '../../core/auth/session.store';
 import { OnboardingApiService } from './onboarding-api.service';
 
@@ -183,8 +184,8 @@ export class OnboardingPageComponent {
         amountCents: Number(this.form.controls.initialCreditCents.value),
       });
       this.pixIntent.set(await firstValueFrom(this.onboardingApi.createPixIntent(pixRequest)));
-    } catch {
-      this.errorKey.set('onboarding.errors.requestFailed');
+    } catch (error) {
+      this.errorKey.set(apiErrorMessage(error, 'onboarding.errors.requestFailed'));
     } finally {
       this.loading.set(false);
     }
@@ -206,8 +207,8 @@ export class OnboardingPageComponent {
         balanceCents: confirmation.balanceCents,
       });
       await this.router.navigateByUrl('/conversations');
-    } catch {
-      this.errorKey.set('onboarding.errors.requestFailed');
+    } catch (error) {
+      this.errorKey.set(apiErrorMessage(error, 'onboarding.errors.requestFailed'));
     } finally {
       this.loading.set(false);
     }

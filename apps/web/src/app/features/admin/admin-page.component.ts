@@ -10,6 +10,7 @@ import {
   type PlanType,
 } from '@bcb/shared';
 import { firstValueFrom } from 'rxjs';
+import { apiErrorMessage } from '../../core/api/api-errors';
 import { AdminApiService } from './admin-api.service';
 
 @Component({
@@ -371,8 +372,8 @@ export class AdminPageComponent implements OnInit {
       this.resetCreateForm();
       this.highlightAndScrollToClient(client.id);
       this.feedback.set('admin.feedback.clientCreated');
-    } catch {
-      this.error.set('admin.errors.createFailed');
+    } catch (error) {
+      this.error.set(apiErrorMessage(error, 'admin.errors.createFailed'));
     }
   }
 
@@ -393,8 +394,8 @@ export class AdminPageComponent implements OnInit {
       );
       this.replaceClient(updated);
       this.feedback.set('admin.feedback.creditAdded');
-    } catch {
-      this.error.set('admin.errors.creditFailed');
+    } catch (error) {
+      this.error.set(apiErrorMessage(error, 'admin.errors.creditFailed'));
     }
   }
 
@@ -415,8 +416,8 @@ export class AdminPageComponent implements OnInit {
       );
       this.replaceClient(updated);
       this.feedback.set('admin.feedback.limitUpdated');
-    } catch {
-      this.error.set('admin.errors.limitFailed');
+    } catch (error) {
+      this.error.set(apiErrorMessage(error, 'admin.errors.limitFailed'));
     }
   }
 
@@ -429,8 +430,8 @@ export class AdminPageComponent implements OnInit {
       );
       this.replaceClient(updated);
       this.feedback.set('admin.feedback.statusUpdated');
-    } catch {
-      this.error.set('admin.errors.statusFailed');
+    } catch (error) {
+      this.error.set(apiErrorMessage(error, 'admin.errors.statusFailed'));
     }
   }
 
@@ -459,8 +460,8 @@ export class AdminPageComponent implements OnInit {
       const updated = await firstValueFrom(this.adminApi.convertPlan(clientId, request));
       this.replaceClient(updated);
       this.feedback.set('admin.feedback.planConverted');
-    } catch {
-      this.error.set('admin.errors.convertFailed');
+    } catch (error) {
+      this.error.set(apiErrorMessage(error, 'admin.errors.convertFailed'));
     }
   }
 
@@ -489,8 +490,8 @@ export class AdminPageComponent implements OnInit {
     try {
       this.clients.set(await firstValueFrom(this.adminApi.listClients()));
       this.syncActionDefaults();
-    } catch {
-      this.error.set('admin.errors.loadFailed');
+    } catch (error) {
+      this.error.set(apiErrorMessage(error, 'admin.errors.loadFailed'));
     }
   }
 

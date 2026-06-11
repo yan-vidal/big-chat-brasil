@@ -277,6 +277,18 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
   - RED confirmado: `e2e/admin.spec.ts -g "translates the administration panel"` falhou primeiro porque o heading `Administration` não aparecia após trocar idioma; depois passou.
   - Gates verdes finais: `git diff --check`, `pnpm format:check`, `pnpm lint`, `pnpm build`, `pnpm test`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/admin.spec.ts e2e/shell.spec.ts e2e/i18n.spec.ts` (11 testes), `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (21 testes).
   - Docker local atualizado novamente após i18n: `docker compose build web`, `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; `curl -I http://127.0.0.1:4200` retornou `HTTP/1.1 200 OK`.
+- **Hotfix web/shared - frontend exibe mensagens de erro do backend**:
+  - Pedido do Yan: ao tentar enviar mensagem sem crédito, o frontend mostrava apenas erro genérico e o feedback podia parecer sucesso; garantir que esse erro e outros retornos dos endpoints apareçam corretamente.
+  - Root cause: os `catch` do web descartavam `HttpErrorResponse.error` e trocavam por chaves genéricas de i18n; em `Nova conversa`, falha de envio dividia o mesmo canal visual verde de feedback.
+  - `apps/web/src/app/core/api/api-errors.ts` centraliza a extração de mensagem do backend, aceitando tanto o contrato estruturado `{ code, message, details? }` quanto o formato padrão Nest `{ message, statusCode, error }`.
+  - `packages/shared/src/schemas/common.ts` ganhou `ApiErrorMessageSchema` para o formato com `message` obrigatório.
+  - `auth`, `onboarding`, `billing`, `admin`, lista de conversas e detalhe da conversa agora usam `apiErrorMessage(error, fallbackKey)` nos erros de endpoint, preservando fallback i18n quando o backend não retorna corpo conhecido.
+  - `ConversationsPageComponent` separa feedback de sucesso (`newConversationFeedback`, verde) de erro (`newConversationError`, vermelho com `role="alert"`); erros locais de validação de nova conversa também passaram para `conversations.errors.*` nos três idiomas.
+  - `apps/web/e2e/chat.spec.ts` cobre erro de envio sem saldo exibindo `Saldo insuficiente para enviar a mensagem` em vermelho e sem criar bolha enviada; também cobre erro do backend ao iniciar nova conversa como alerta vermelho.
+  - `apps/web/e2e/auth-onboarding.spec.ts` cobre `401` de login no formato Nest exibindo `Credenciais invalidas` em vez do fallback genérico.
+  - RED confirmado: chat falhou primeiro mostrando `Não foi possível enviar a mensagem.`; auth falhou primeiro mostrando `Não foi possível autenticar com esses dados`; depois ambos passaram após o parser central.
+  - Gates verdes: `git diff --check`, `pnpm format:check`, `pnpm lint`, `pnpm build`, `pnpm test`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm --filter @bcb/web exec playwright test -c playwright.config.ts e2e/auth-onboarding.spec.ts e2e/chat.spec.ts e2e/i18n.spec.ts` (12 testes), `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable pnpm test:e2e` (24 testes).
+  - Docker local atualizado: `docker compose build web`, `API_PUBLISHED_PORT=3002 docker compose up --detach --force-recreate web`; `curl -I http://127.0.0.1:4200` retornou `HTTP/1.1 200 OK`, `curl -I http://127.0.0.1:3002/auth/me` retornou `401 Unauthorized` com CORS para `localhost:4200`, e os dois testes de erro do chat passaram contra `localhost:4200` com config Playwright temporária usando `localStorage['bcb.api.baseUrl']='http://localhost:3000'` para os mocks; config removida após a validação.
 - Observação de versão: Angular/CLI `22.0.0` exige TypeScript `>=6.0 <6.1`; Sprint 0 usa TypeScript `6.0.3` apesar do alvo inicial "TypeScript 5" do plano mestre.
 - Planejamento de referência (feito com Codex, revisado por Claude em 2026-06-09):
   - `IMPLEMENTATION_PLAN.md` — plano mestre: sprints 0–10, endpoints, premissas, registro de decisões. **Começa pela seção "Como Executar Este Plano".**
@@ -291,7 +303,7 @@ Desafio técnico da Irrah (plataforma de chat "Big Chat Brasil"), perfil **Fulls
    git status --short --branch
    git log --oneline --decorate -3
    ```
-2. O hotfix admin anterior já está no log como `fix(web): improve admin client creation`; o hotfix atual deve aparecer como `fix(web): localize admin console and navigation`.
+2. O hotfix atual deve aparecer no log como `fix(web): surface backend api errors`.
 3. Fazer uma revisão final de entrega: checar README e `docs/challenge-compliance.md` do ponto de vista do avaliador, validar Docker/full-stack em ambiente limpo, limpar containers se não quiser manter a demo local rodando e considerar renomear a branch antes de push/PR.
 4. Não iniciar features novas sem alinhar escopo; o MVP planejado já está fechado. Se quiser maximizar aderência literal aos endpoints sugeridos, o próximo bloco opcional é adicionar aliases `/auth`, `/clients` e `GET /messages` sem mudar o fluxo principal.
 

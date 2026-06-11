@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { type BillingSummaryResponse, type BillingTransactionResponse } from '@bcb/shared';
 import { firstValueFrom } from 'rxjs';
+import { apiErrorMessage } from '../../core/api/api-errors';
 import { BillingApiService } from './billing-api.service';
 
 @Component({
@@ -26,7 +27,7 @@ import { BillingApiService } from './billing-api.service';
         </p>
       } @else if (error()) {
         <p class="text-sm font-medium text-red-700 dark:text-red-300" role="alert">
-          {{ 'billing.errors.loadFailed' | translate }}
+          {{ error()! | translate }}
         </p>
       } @else if (summary(); as billing) {
         <section class="grid gap-3 md:grid-cols-4">
@@ -119,7 +120,7 @@ export class BillingPageComponent implements OnInit {
 
   protected readonly summary = signal<BillingSummaryResponse | null>(null);
   protected readonly loading = signal(true);
-  protected readonly error = signal(false);
+  protected readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
     void this.loadSummary();
@@ -167,12 +168,12 @@ export class BillingPageComponent implements OnInit {
 
   private async loadSummary(): Promise<void> {
     this.loading.set(true);
-    this.error.set(false);
+    this.error.set(null);
 
     try {
       this.summary.set(await firstValueFrom(this.billingApi.getSummary()));
-    } catch {
-      this.error.set(true);
+    } catch (error) {
+      this.error.set(apiErrorMessage(error, 'billing.errors.loadFailed'));
       this.summary.set(null);
     } finally {
       this.loading.set(false);

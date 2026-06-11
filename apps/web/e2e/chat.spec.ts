@@ -210,6 +210,47 @@ test.describe('integrated chat web', () => {
     await expect(sentBubble.getByText('Lida')).toBeVisible();
   });
 
+  test('shows backend API errors when a direct message cannot be sent', async ({ page }) => {
+    await seedChatSession(page);
+    await page.route(`${apiBaseUrl}/billing/me`, async (route) => {
+      await fulfillJson(route, {
+        planType: 'prepaid',
+        balanceCents: 0,
+        transactions: [],
+      });
+    });
+    await page.route(`${apiBaseUrl}/conversations/${conversationId}`, async (route) => {
+      await fulfillJson(route, { ...mariaConversation, unreadCount: 0 });
+    });
+    await page.route(`${apiBaseUrl}/conversations/${conversationId}/messages`, async (route) => {
+      await fulfillJson(route, []);
+    });
+    await page.route(`${apiBaseUrl}/conversations/${conversationId}/read`, async (route) => {
+      await fulfillJson(route, { conversationId, unreadCount: 0 });
+    });
+    await page.route(`${apiBaseUrl}/messages`, async (route) => {
+      await route.fulfill({
+        status: 422,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'INSUFFICIENT_BALANCE',
+          message: 'Saldo insuficiente para enviar a mensagem',
+        }),
+      });
+    });
+
+    await page.goto(`/conversations/${conversationId}`);
+    await page.getByLabel('Mensagem').fill('Mensagem sem saldo.');
+    await page.getByRole('button', { name: 'Enviar' }).click();
+
+    const alert = page.getByRole('alert');
+    await expect(alert).toHaveText('Saldo insuficiente para enviar a mensagem');
+    await expect(alert).toHaveClass(/text-red-700/);
+    await expect(
+      page.getByTestId('message-bubble').filter({ hasText: 'Mensagem sem saldo.' }),
+    ).toBeHidden();
+  });
+
   test('lists conversations with billing, search, unread badges and recipient compose', async ({
     page,
   }) => {
@@ -275,5 +316,45 @@ test.describe('integrated chat web', () => {
       priority: 'normal',
     });
     await expect(page.getByText('Mensagem inicial enviada')).toBeVisible();
+  });
+
+  test('shows backend API errors as errors when starting a new conversation fails', async ({
+    page,
+  }) => {
+    await seedChatSession(page);
+    await page.route(`${apiBaseUrl}/billing/me`, async (route) => {
+      await fulfillJson(route, {
+        planType: 'prepaid',
+        balanceCents: 2500,
+        transactions: [],
+      });
+    });
+    await page.route(`${apiBaseUrl}/conversations`, async (route) => {
+      await fulfillJson(route, [mariaConversation]);
+    });
+    await page.route(`${apiBaseUrl}/recipients`, async (route) => {
+      await fulfillJson(route, [{ id: newRecipientId, name: 'Carlos Pereira' }]);
+    });
+    await page.route(`${apiBaseUrl}/messages`, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'VALIDATION_ERROR',
+          message: 'Payload de mensagem invalido',
+        }),
+      });
+    });
+
+    await page.goto('/conversations');
+    await page.getByRole('button', { name: 'Nova conversa' }).click();
+    await page.getByLabel('Destinatário').selectOption(newRecipientId);
+    await page.getByLabel('Mensagem inicial').fill('Mensagem inválida no backend.');
+    await page.getByRole('button', { name: 'Enviar nova conversa' }).click();
+
+    const alert = page.getByRole('alert');
+    await expect(alert).toHaveText('Payload de mensagem invalido');
+    await expect(alert).toHaveClass(/text-red-700/);
+    await expect(page.getByText('Não foi possível enviar a mensagem inicial.')).toBeHidden();
   });
 });

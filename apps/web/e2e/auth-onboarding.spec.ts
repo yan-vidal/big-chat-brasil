@@ -57,6 +57,29 @@ test.describe('login and onboarding flow', () => {
     expect(authCalled).toBe(false);
   });
 
+  test('shows backend auth errors when login is rejected', async ({ page }) => {
+    await page.route('**/auth/session', async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: 'Credenciais invalidas',
+          error: 'Unauthorized',
+          statusCode: 401,
+        }),
+      });
+    });
+
+    await page.goto('/login');
+    await page.getByLabel('Documento').fill('529.982.247-25');
+    await page.getByLabel('Senha').fill('senha-incorreta');
+    await page.getByRole('button', { name: 'Entrar' }).click();
+
+    const alert = page.getByRole('alert');
+    await expect(alert).toHaveText('Credenciais invalidas');
+    await expect(alert).toHaveClass(/text-red-700/);
+  });
+
   test('redirects active clients to conversations after login', async ({ page }) => {
     await page.route('**/auth/session', async (route) => {
       expect(route.request().postDataJSON()).toEqual({

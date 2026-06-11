@@ -12,4 +12,8 @@ export const ApiErrorSchema = z.object({
   details: z.unknown().optional(),
 });
 
+export const ApiErrorMessageSchema = z.object({
+  message: z.string().min(1),
+});
+
 export type ApiError = z.infer<typeof ApiErrorSchema>;
